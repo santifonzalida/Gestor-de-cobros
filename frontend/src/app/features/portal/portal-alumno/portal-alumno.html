@@ -1,0 +1,59 @@
+<div class="mx-auto min-h-screen max-w-md bg-page sm:min-h-0 sm:py-8">
+  @if (alumno(); as a) {
+    <div class="rounded-b-none bg-accent px-5 pb-10 pt-5 text-white sm:rounded-b-2xl">
+      <div class="text-[13px] opacity-85">Hola,</div>
+      <div class="font-display text-lg font-bold">{{ a.nombre }} {{ a.apellido }}</div>
+      <div class="mt-0.5 text-xs opacity-85">{{ a.clase.nombre }}</div>
+    </div>
+
+    <div class="-mt-6 px-4.5 pb-6">
+      @if (a.cuotaActual; as cuota) {
+        <div class="mb-3.5 rounded-2xl border border-border bg-surface p-4 shadow-sm">
+          <div class="mb-1.5 flex items-center justify-between">
+            <span class="text-[12.5px] text-text-muted">
+              Cuota de {{ cuota.fechaVencimiento | date: 'MMMM' }}
+            </span>
+            @if (cuota.estado === EstadoCuota.PAGADA) {
+              <app-status-badge tone="ok">Pagada</app-status-badge>
+            } @else if (cuota.estado === EstadoCuota.EN_REVISION) {
+              <app-status-badge tone="soon">En revisión</app-status-badge>
+            } @else if (cuota.estado === EstadoCuota.VENCIDA) {
+              <app-status-badge tone="debt">Vencida</app-status-badge>
+            } @else {
+              <app-status-badge tone="soon">Vence en {{ diasParaVencer(cuota.fechaVencimiento) }} días</app-status-badge>
+            }
+          </div>
+          <div class="font-display text-2xl font-bold">${{ cuota.monto | number }}</div>
+          <div class="mt-0.5 text-[11.5px] text-text-muted">
+            Fecha límite: {{ cuota.fechaVencimiento | date: 'dd/MM/yyyy' }}
+          </div>
+        </div>
+
+        @if (cuota.estado !== EstadoCuota.PAGADA) {
+          <div class="mb-3.5 rounded-2xl border border-dashed border-border bg-surface p-4.5 text-center">
+            <div class="mb-2.5 flex h-20 items-center justify-center rounded-lg border border-dashed border-border bg-page px-3 text-center text-[10.5px] text-text-muted">
+              arrastrá o subí una foto / PDF del comprobante
+            </div>
+            <button
+              (click)="abrirSelectorArchivo()"
+              class="w-full rounded-lg bg-accent py-2.5 text-sm font-semibold text-white transition-colors hover:bg-accent-hover"
+            >
+              Subir comprobante
+            </button>
+            <input #inputArchivo type="file" accept="image/*,.pdf" class="hidden" (change)="onArchivoSeleccionado($event)" />
+          </div>
+        }
+      }
+
+      <div class="mb-2 font-display text-xs font-semibold">Historial</div>
+      <div class="flex flex-col gap-2 text-xs">
+        @for (c of historial(); track c.id) {
+          <div class="flex justify-between">
+            <span>{{ c.fechaVencimiento | date: 'MMMM yyyy' }}</span>
+            <app-status-badge tone="ok">Pagada</app-status-badge>
+          </div>
+        }
+      </div>
+    </div>
+  }
+</div>

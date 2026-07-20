@@ -1,0 +1,77 @@
+<div class="mb-6 flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
+  <div>
+    <h2 class="text-xl font-bold">Hola, Coordinación 👋</h2>
+    <div class="mt-0.5 text-xs text-text-muted">
+      {{ hoy | date: 'EEEE d \'de\' MMMM' }} · {{ alumnos().length }} alumnos activos
+    </div>
+  </div>
+  <button
+    routerLink="/alumnos"
+    class="rounded-lg bg-accent px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-accent-hover"
+  >
+    + Registrar comprobante
+  </button>
+</div>
+
+<div class="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+  <app-stat-tile label="Recaudado este mes" [value]="'$' + (recaudado() | number)" />
+  <app-stat-tile label="Pendiente de cobro" [value]="'$' + (pendiente() | number)" tone="debt" />
+  <app-stat-tile label="Alumnos al día" [value]="alDia() + ' / ' + alumnos().length" tone="ok" />
+  <app-stat-tile label="Comprobantes por revisar" [value]="comprobantesPendientes().length + ''" />
+</div>
+
+<div class="grid grid-cols-1 gap-4 lg:grid-cols-[1.3fr_1fr]">
+  <div class="rounded-2xl border border-border bg-surface p-4.5">
+    <div class="mb-3 font-display text-sm font-semibold">Vencimientos próximos</div>
+    <div class="flex flex-col gap-2.5">
+      @for (a of vencimientosProximos(); track a.id) {
+        <div
+          class="flex cursor-pointer items-center gap-2.5 rounded-lg p-1.5 hover:bg-page"
+          (click)="irAlDetalle(a.id)"
+        >
+          <app-avatar-initials [nombre]="a.nombre" [apellido]="a.apellido" [seed]="a.id" [size]="32" />
+          <div class="flex-1">
+            <div class="text-sm font-semibold">{{ a.nombre }} {{ a.apellido }}</div>
+            <div class="text-[11.5px] text-text-muted">
+              {{ a.clase.nombre }} ·
+              @if (a.estadoPago === 'adeuda') {
+                vencida
+              } @else {
+                vence en {{ diasParaVencer(a.cuotaActual!.fechaVencimiento) }} días
+              }
+            </div>
+          </div>
+          <app-status-badge [tone]="a.estadoPago === 'adeuda' ? 'debt' : 'soon'">
+            {{ a.estadoPago === 'adeuda' ? 'Adeuda' : 'Próximo' }}
+          </app-status-badge>
+        </div>
+      } @empty {
+        <div class="text-sm text-text-muted">No hay vencimientos próximos.</div>
+      }
+    </div>
+  </div>
+
+  <div class="rounded-2xl border border-border bg-surface p-4.5">
+    <div class="mb-3 font-display text-sm font-semibold">Comprobantes por revisar</div>
+    <div class="flex flex-col gap-2.5">
+      @for (c of comprobantesPendientes(); track c.alumno.id) {
+        <div class="flex items-center gap-2.5">
+          <div
+            class="flex h-8.5 w-8.5 shrink-0 items-center justify-center rounded-lg border border-dashed border-border bg-page text-center font-mono text-[10px] text-text-muted"
+          >
+            {{ c.archivo.split('.').pop() }}
+          </div>
+          <div class="flex-1 text-sm">{{ c.alumno.nombre }} {{ c.alumno.apellido }}</div>
+          <button
+            (click)="irAlDetalle(c.alumno.id)"
+            class="rounded-lg border border-border px-2.5 py-1.5 text-xs font-semibold text-text-muted transition-colors hover:bg-page"
+          >
+            Revisar
+          </button>
+        </div>
+      } @empty {
+        <div class="text-sm text-text-muted">No hay comprobantes pendientes.</div>
+      }
+    </div>
+  </div>
+</div>

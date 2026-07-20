@@ -1,0 +1,52 @@
+<div class="mb-4.5 flex flex-col gap-3.5 sm:flex-row">
+  <app-stat-tile class="flex-1" label="Al día" [value]="alDia() + ''" tone="ok" />
+  <app-stat-tile class="flex-1" label="Adeudan" [value]="adeudan() + ''" tone="debt" />
+  <app-stat-tile class="flex-1" label="Vencen esta semana" [value]="vencenEstaSemana() + ''" />
+</div>
+
+<div class="mb-3 flex flex-wrap gap-2">
+  <button
+    (click)="seleccionarClase(null)"
+    class="rounded-lg border px-3.5 py-1.5 text-xs font-semibold transition-colors"
+    [class]="claseSeleccionada() === null ? 'border-transparent bg-accent-soft text-accent' : 'border-border text-text-muted hover:bg-page'"
+  >
+    Todos
+  </button>
+  @for (clase of clases(); track clase.id) {
+    <button
+      (click)="seleccionarClase(clase.id)"
+      class="rounded-lg border px-3.5 py-1.5 text-xs font-semibold transition-colors"
+      [class]="claseSeleccionada() === clase.id ? 'border-transparent bg-accent-soft text-accent' : 'border-border text-text-muted hover:bg-page'"
+    >
+      {{ clase.nombre }}
+    </button>
+  }
+</div>
+
+<div class="overflow-x-auto rounded-2xl border border-border bg-surface">
+  <table class="w-full border-collapse text-[12.5px]">
+    <thead>
+      <tr class="text-left text-text-muted">
+        <th class="px-3.5 py-2.5 font-medium">Alumno</th>
+        <th class="font-medium">Clase</th>
+        <th class="font-medium">Cuota</th>
+        <th class="font-medium">Estado</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (a of alumnosFiltrados(); track a.id) {
+        <tr class="cursor-pointer border-t border-border hover:bg-page" (click)="irAlDetalle(a.id)">
+          <td class="flex items-center gap-2 px-3.5 py-2.5">
+            <app-avatar-initials [nombre]="a.nombre" [apellido]="a.apellido" [seed]="a.id" [size]="24" />
+            {{ a.nombre }} {{ a.apellido }}
+          </td>
+          <td>{{ a.clase.nombre }}</td>
+          <td>${{ a.cuotaActual?.monto | number }}</td>
+          <td>
+            <app-status-badge [tone]="badgeTone(a.estadoPago)">{{ badgeLabel(a.estadoPago) }}</app-status-badge>
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>

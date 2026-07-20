@@ -1,1 +1,38 @@
-/* You can add global styles to this file, and also import other style files */
+@import 'tailwindcss';
+
+@theme {
+  --color-page: oklch(0.97 0.01 70);
+  --color-surface: oklch(0.99 0.005 70);
+  --color-border: oklch(0.9 0.01 70);
+  --color-text: oklch(0.22 0.02 60);
+  --color-text-muted: oklch(0.5 0.02 60);
+
+  --color-accent: oklch(0.55 0.18 250);
+  --color-accent-hover: oklch(0.48 0.18 250);
+  --color-accent-soft: oklch(0.94 0.04 250);
+
+  --color-ok-bg: oklch(0.94 0.05 150);
+  --color-ok-text: oklch(0.38 0.12 150);
+  --color-debt-bg: oklch(0.94 0.05 25);
+  --color-debt-text: oklch(0.5 0.18 25);
+  --color-soon-bg: oklch(0.95 0.06 80);
+  --color-soon-text: oklch(0.5 0.13 80);
+
+  --font-display: 'Plus Jakarta Sans', system-ui, sans-serif;
+  --font-sans: 'Inter', system-ui, sans-serif;
+}
+
+body {
+  margin: 0;
+  background: var(--color-page);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-display);
+  margin: 0;
+}

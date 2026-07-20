@@ -1,0 +1,53 @@
+<div class="p-5 md:p-7">
+  @if (alumno(); as a) {
+    <div class="mb-5 flex flex-wrap items-center gap-3.5">
+      <app-avatar-initials [nombre]="a.nombre" [apellido]="a.apellido" [seed]="a.id" [size]="56" />
+      <div class="flex-1">
+        <h2 class="text-lg font-bold">{{ a.nombre }} {{ a.apellido }}</h2>
+        <div class="text-[12.5px] text-text-muted">
+          {{ a.clase.nombre }} · alumno desde {{ a.fechaAlta | date: 'MMMM yyyy' }}
+          @if (a.email) {
+            · {{ a.email }}
+          }
+        </div>
+      </div>
+      <app-status-badge [tone]="estadoAlumnoTone()">{{ estadoAlumnoLabel() }}</app-status-badge>
+      <button
+        (click)="abrirSelectorArchivo()"
+        class="rounded-lg bg-accent px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-accent-hover"
+      >
+        Cargar comprobante
+      </button>
+      <input #inputArchivo type="file" accept="image/*,.pdf" class="hidden" (change)="onArchivoSeleccionado($event)" />
+    </div>
+
+    <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
+      <div class="rounded-2xl border border-border bg-surface p-4">
+        <div class="mb-3 font-display text-sm font-semibold">Cuotas</div>
+        <div class="flex flex-col gap-2.5 text-[12.5px]">
+          @for (c of cuotas(); track c.id) {
+            <div class="flex items-center justify-between">
+              <span>{{ c.fechaVencimiento | date: 'MMMM yyyy' }} — ${{ c.monto | number }}</span>
+              <app-status-badge [tone]="badgeTone(c.estado)">{{ badgeLabel(c) }}</app-status-badge>
+            </div>
+          }
+        </div>
+      </div>
+
+      <div class="rounded-2xl border border-border bg-surface p-4">
+        <div class="mb-3 font-display text-sm font-semibold">Comprobantes cargados</div>
+        <div class="flex flex-wrap gap-2.5">
+          @for (p of pagos(); track p.id) {
+            <div
+              class="flex h-16 w-16 items-center justify-center rounded-lg border border-dashed border-border bg-page p-2 text-center font-mono text-[10.5px] text-text-muted"
+            >
+              {{ p.comprobanteNombre }}
+            </div>
+          } @empty {
+            <div class="text-[12.5px] text-text-muted">Todavía no se cargaron comprobantes.</div>
+          }
+        </div>
+      </div>
+    </div>
+  }
+</div>

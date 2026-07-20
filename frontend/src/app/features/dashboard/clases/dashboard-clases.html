@@ -1,0 +1,32 @@
+<h2 class="mb-5 text-xl font-bold">Alumnos por clase</h2>
+
+<div class="flex flex-col gap-4.5">
+  @for (grupo of grupos(); track grupo.clase.id) {
+    <div>
+      <div class="mb-2.5 flex items-center justify-between">
+        <div class="font-display text-sm font-semibold">
+          {{ grupo.clase.icono }} {{ grupo.clase.nombre }} · {{ grupo.alumnos.length }} alumnos
+        </div>
+        @if (grupo.adeudan > 0) {
+          <span class="text-[11.5px] text-debt-text">{{ grupo.adeudan }} adeudan</span>
+        } @else {
+          <span class="text-[11.5px] text-ok-text">todos al día</span>
+        }
+      </div>
+      <div class="flex flex-wrap gap-2.5">
+        @for (a of grupo.alumnos; track a.id) {
+          <div class="flex w-16 flex-col items-center gap-1.5">
+            <app-avatar-initials
+              [nombre]="a.nombre"
+              [apellido]="a.apellido"
+              [seed]="a.id"
+              [size]="44"
+              [ring]="ring(a.estadoPago)"
+            />
+            <span class="text-center text-[10.5px]">{{ a.nombre }}</span>
+          </div>
+        }
+      </div>
+    </div>
+  }
+</div>

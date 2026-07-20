@@ -1,0 +1,69 @@
+<div class="p-5 md:p-7">
+  <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+    <h2 class="text-lg font-bold">Alumnos</h2>
+    <input
+      [ngModel]="busqueda()"
+      (ngModelChange)="busqueda.set($event)"
+      placeholder="Buscar alumno..."
+      class="w-full rounded-lg border border-border px-3 py-2 text-[12.5px] sm:w-56"
+    />
+  </div>
+
+  <div class="mb-3.5 flex flex-wrap gap-2">
+    <button
+      (click)="seleccionarTab('todos')"
+      class="rounded-lg border px-3.5 py-1.5 text-xs font-semibold transition-colors"
+      [class]="tab() === 'todos' ? 'border-transparent bg-accent-soft text-accent' : 'border-border text-text-muted hover:bg-page'"
+    >
+      Todos ({{ alumnos().length }})
+    </button>
+    <button
+      (click)="seleccionarTab('al_dia')"
+      class="rounded-lg border px-3.5 py-1.5 text-xs font-semibold transition-colors"
+      [class]="tab() === 'al_dia' ? 'border-transparent bg-accent-soft text-accent' : 'border-border text-text-muted hover:bg-page'"
+    >
+      Al día ({{ alDiaCount() }})
+    </button>
+    <button
+      (click)="seleccionarTab('adeuda')"
+      class="rounded-lg border px-3.5 py-1.5 text-xs font-semibold transition-colors"
+      [class]="tab() === 'adeuda' ? 'border-transparent bg-accent-soft text-accent' : 'border-border text-text-muted hover:bg-page'"
+    >
+      Adeudan ({{ adeudanCount() }})
+    </button>
+  </div>
+
+  <div class="overflow-x-auto rounded-2xl border border-border bg-surface">
+    <table class="w-full border-collapse text-[12.5px]">
+      <thead>
+        <tr class="text-left text-text-muted">
+          <th class="px-3.5 py-2.5 font-medium">Alumno</th>
+          <th class="font-medium">Clase</th>
+          <th class="font-medium">Última cuota</th>
+          <th class="font-medium">Vencimiento</th>
+          <th class="font-medium">Estado</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (a of alumnosFiltrados(); track a.id) {
+          <tr class="cursor-pointer border-t border-border hover:bg-page" (click)="irAlDetalle(a.id)">
+            <td class="flex items-center gap-2 px-3.5 py-2.5">
+              <app-avatar-initials [nombre]="a.nombre" [apellido]="a.apellido" [seed]="a.id" [size]="26" />
+              {{ a.nombre }} {{ a.apellido }}
+            </td>
+            <td>{{ a.clase.nombre }}</td>
+            <td>{{ a.cuotaActual ? (a.cuotaActual.fechaVencimiento | date: 'MMMM') : '—' }}</td>
+            <td>{{ a.cuotaActual ? (a.cuotaActual.fechaVencimiento | date: 'dd/MM') : '—' }}</td>
+            <td>
+              <app-status-badge [tone]="badgeTone(a.estadoPago)">{{ badgeLabel(a.estadoPago) }}</app-status-badge>
+            </td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="5" class="px-3.5 py-6 text-center text-text-muted">Sin resultados.</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</div>

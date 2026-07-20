@@ -1,0 +1,21 @@
+<div class="flex min-h-screen flex-col md:flex-row">
+  <!-- Sidebar (md+) -->
+  <aside class="hidden shrink-0 flex-col gap-0.5 border-r border-border bg-surface p-3.5 md:flex md:w-[200px]">
+    <div class="px-2.5 pb-4 pt-1.5 font-display text-lg font-bold text-accent">Cobros</div>
+    @for (entry of navEntries; track entry.label) {
+      <app-nav-item [label]="entry.label" [icon]="entry.icon" [route]="entry.route" [exact]="!!entry.exact" />
+    }
+  </aside>
+
+  <!-- Top bar (mobile) -->
+  <header class="flex items-center gap-1 overflow-x-auto border-b border-border bg-surface px-3 py-2 md:hidden">
+    <div class="mr-2 shrink-0 font-display text-base font-bold text-accent">Cobros</div>
+    @for (entry of navEntries; track entry.label) {
+      <app-nav-item [label]="entry.label" [icon]="entry.icon" [route]="entry.route" [exact]="!!entry.exact" />
+    }
+  </header>
+
+  <main class="flex-1 overflow-auto">
+    <router-outlet />
+  </main>
+</div>
