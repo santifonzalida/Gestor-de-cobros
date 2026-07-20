@@ -61,7 +61,7 @@ export class UsuarioService {
     await this.repoUsuarios
       .createQueryBuilder()
       .update('usuarios')
-      .set({ lastLoginAt: new Date() })
+      .set({ ultimoAcceso: new Date() })
       .where('id = :id', { id })
       .execute();
   }
