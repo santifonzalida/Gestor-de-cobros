@@ -75,4 +75,17 @@ export class CuotasService {
     }
     return { message: 'Cuota eliminada exitosamente.' };
   }
+
+  /**
+   * La FK del OneToOne cuota-pago vive del lado de `cuota` (@JoinColumn),
+   * así que hay que limpiar esa referencia antes de poder borrar el pago.
+   */
+  async desvincularPago(cuotaId: number): Promise<void> {
+    await this.repo
+      .createQueryBuilder()
+      .update(Cuota)
+      .set({ pago: null, estado: EstadoCuota.PENDIENTE })
+      .where('id = :id', { id: cuotaId })
+      .execute();
+  }
 }
