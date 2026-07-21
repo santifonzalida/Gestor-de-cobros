@@ -5,14 +5,19 @@ import {
   OneToOne,
   JoinColumn,
   OneToMany,
+  ManyToOne,
 } from 'typeorm';
 import { Usuario } from '../../usuarios/modelo/usuario.entity';
 import { Cuota } from '../../cuotas/modelo/cuota.entity';
+import { Negocio } from '../../negocios/modelo/negocio.entity';
 
 @Entity()
 export class Alumno {
   @PrimaryGeneratedColumn()
   id: number;
+
+  @ManyToOne(() => Negocio, { nullable: false })
+  negocio: Negocio;
 
   @Column()
   nombre: string;

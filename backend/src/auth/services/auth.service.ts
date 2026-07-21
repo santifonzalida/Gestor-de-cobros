@@ -20,12 +20,12 @@ export class AuthService {
     @InjectRepository(Rol) private readonly repo: Repository<Rol>,
   ) {}
 
-  async register(dto: RegistrarUsuarioDto) {
+  async register(dto: RegistrarUsuarioDto, negocioId: number) {
     const roleName = dto.roleName ?? 'USER';
     const role = await this.usersService.findByName(roleName);
     if (!role) throw new BadRequestException(`El rol '${roleName}' no existe.`);
 
-    const user = await this.usersService.create(dto.email, dto.password);
+    const user = await this.usersService.create(dto.email, dto.password, negocioId);
     user.roles = [role];
     await this.usersService.save(user);
     return user;
@@ -43,6 +43,10 @@ export class AuthService {
   }
 
   async login(user: Usuario) {
+    if (!user.negocio) {
+      throw new UnauthorizedException('El usuario no tiene un negocio asignado.');
+    }
+
     await this.usersService.updateLastLogin(user.id);
 
     const permissions = user.roles
@@ -59,6 +63,7 @@ export class AuthService {
     const payload = {
       sub: user.id,
       email: user.email,
+      negocioId: user.negocio.id,
       roles: rolesSimplificados,
       permissions: uniquePermissions,
     };

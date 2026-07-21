@@ -12,6 +12,7 @@ import {
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { NegocioId } from '../../auth/decorators/negocio-id.decorator';
 import { Roles } from '../../auth/decorators/roles.decorator';
 import { RolesGuard } from '../../auth/guards/roles.guard';
 import { ActualizarCuotaDto } from '../dtos/actualizar-cuota.dto';
@@ -31,21 +32,21 @@ export class CuotasController {
   @Roles('ADMIN')
   @ApiOperation({ summary: 'Crear una nueva cuota' })
   @ApiResponse({ status: 201, description: 'Cuota creada exitosamente' })
-  crear(@Body() dto: CrearCuotaDto) {
-    return this.cuotasService.crear(dto);
+  crear(@Body() dto: CrearCuotaDto, @NegocioId() negocioId: number) {
+    return this.cuotasService.crear(dto, negocioId);
   }
 
   @Get()
   @ApiOperation({ summary: 'Listar cuotas (filtrable por alumno, estado, mes y año)' })
-  listarTodos(@Query() filtros: FiltrarCuotasDto) {
-    return this.cuotasService.listarTodos(filtros);
+  listarTodos(@Query() filtros: FiltrarCuotasDto, @NegocioId() negocioId: number) {
+    return this.cuotasService.listarTodos(filtros, negocioId);
   }
 
   @Get(':id')
   @ApiOperation({ summary: 'Obtener una cuota por id' })
   @ApiResponse({ status: 404, description: 'Cuota no encontrada' })
-  obtenerPorId(@Param('id', ParseIntPipe) id: number) {
-    return this.cuotasService.obtenerPorId(id);
+  obtenerPorId(@Param('id', ParseIntPipe) id: number, @NegocioId() negocioId: number) {
+    return this.cuotasService.obtenerPorId(id, negocioId);
   }
 
   @Patch(':id')
@@ -53,8 +54,12 @@ export class CuotasController {
   @Roles('ADMIN')
   @ApiOperation({ summary: 'Actualizar una cuota' })
   @ApiResponse({ status: 404, description: 'Cuota no encontrada' })
-  actualizar(@Param('id', ParseIntPipe) id: number, @Body() dto: ActualizarCuotaDto) {
-    return this.cuotasService.actualizar(id, dto);
+  actualizar(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: ActualizarCuotaDto,
+    @NegocioId() negocioId: number,
+  ) {
+    return this.cuotasService.actualizar(id, dto, negocioId);
   }
 
   @Delete(':id')
@@ -62,7 +67,7 @@ export class CuotasController {
   @Roles('ADMIN')
   @ApiOperation({ summary: 'Eliminar una cuota' })
   @ApiResponse({ status: 404, description: 'Cuota no encontrada' })
-  eliminar(@Param('id', ParseIntPipe) id: number) {
-    return this.cuotasService.eliminar(id);
+  eliminar(@Param('id', ParseIntPipe) id: number, @NegocioId() negocioId: number) {
+    return this.cuotasService.eliminar(id, negocioId);
   }
 }

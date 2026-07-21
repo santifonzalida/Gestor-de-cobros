@@ -12,6 +12,7 @@ import { RegistrarUsuarioDto } from '../dtos/registrarUsuarioDto';
 import { AuthGuard } from '@nestjs/passport';
 import { RolesGuard } from 'src/auth/guards/roles.guard';
 import { Roles } from 'src/auth/decorators/roles.decorator';
+import { NegocioId } from 'src/auth/decorators/negocio-id.decorator';
 import {
   ApiTags,
   ApiOperation,
@@ -36,8 +37,8 @@ export class AuthController {
     description: 'Email ya está en uso o rol inválido',
   })
   @ApiResponse({ status: 403, description: 'Sin permisos' })
-  register(@Body() dto: RegistrarUsuarioDto) {
-    return this.authService.register(dto);
+  register(@Body() dto: RegistrarUsuarioDto, @NegocioId() negocioId: number) {
+    return this.authService.register(dto, negocioId);
   }
 
   @UseGuards(AuthGuard('local'))

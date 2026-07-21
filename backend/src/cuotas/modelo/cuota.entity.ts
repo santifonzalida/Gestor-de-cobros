@@ -9,6 +9,7 @@ import {
 } from 'typeorm';
 import { Alumno } from '../../alumnos/modelo/alumno.entity';
 import { Pago } from '../../pagos/modelo/pago.entity';
+import { Negocio } from '../../negocios/modelo/negocio.entity';
 import { EstadoCuota } from './estado-cuota.enum';
 
 @Entity()
@@ -16,6 +17,9 @@ import { EstadoCuota } from './estado-cuota.enum';
 export class Cuota {
   @PrimaryGeneratedColumn()
   id: number;
+
+  @ManyToOne(() => Negocio, { nullable: false })
+  negocio: Negocio;
 
   @ManyToOne(() => Alumno, (alumno) => alumno.cuotas)
   alumno: Alumno;

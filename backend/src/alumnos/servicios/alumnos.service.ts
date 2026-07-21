@@ -12,38 +12,42 @@ export class AlumnosService {
     private readonly repo: Repository<Alumno>,
   ) {}
 
-  async crear(dto: CrearAlumnoDto): Promise<Alumno> {
+  async crear(dto: CrearAlumnoDto, negocioId: number): Promise<Alumno> {
     const alumno = this.repo.create({
       ...dto,
+      negocio: { id: negocioId },
       fechaAlta: new Date(),
       activo: true,
     });
     return this.repo.save(alumno);
   }
 
-  async listarTodos(): Promise<Alumno[]> {
-    return this.repo.find({ order: { id: 'ASC' } });
+  async listarTodos(negocioId: number): Promise<Alumno[]> {
+    return this.repo.find({
+      where: { negocio: { id: negocioId } },
+      order: { id: 'ASC' },
+    });
   }
 
-  async obtenerPorId(id: number): Promise<Alumno> {
-    const alumno = await this.repo.findOne({ where: { id } });
+  async obtenerPorId(id: number, negocioId: number): Promise<Alumno> {
+    const alumno = await this.repo.findOne({
+      where: { id, negocio: { id: negocioId } },
+    });
     if (!alumno) {
       throw new NotFoundException('No se encontró el alumno.');
     }
     return alumno;
   }
 
-  async actualizar(id: number, dto: ActualizarAlumnoDto): Promise<Alumno> {
-    const alumno = await this.obtenerPorId(id);
+  async actualizar(id: number, dto: ActualizarAlumnoDto, negocioId: number): Promise<Alumno> {
+    const alumno = await this.obtenerPorId(id, negocioId);
     Object.assign(alumno, dto);
     return this.repo.save(alumno);
   }
 
-  async eliminar(id: number): Promise<{ message: string }> {
-    const result = await this.repo.delete(id);
-    if (result.affected === 0) {
-      throw new NotFoundException('No se encontró el alumno.');
-    }
+  async eliminar(id: number, negocioId: number): Promise<{ message: string }> {
+    await this.obtenerPorId(id, negocioId);
+    await this.repo.delete(id);
     return { message: 'Alumno eliminado exitosamente.' };
   }
 }

@@ -6,6 +6,7 @@ import { AlumnosModule } from './alumnos/alumnos.module';
 import { CuotasModule } from './cuotas/cuotas.module';
 import { PagosModule } from './pagos/pagos.module';
 import { UsuariosModule } from './usuarios/usuarios.module';
+import { NegociosModule } from './negocios/negocios.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { UsuariosModule } from './usuarios/usuarios.module';
     CuotasModule,
     PagosModule,
     UsuariosModule,
+    NegociosModule,
   ],
   controllers: [],
   providers: [],

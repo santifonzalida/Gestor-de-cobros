@@ -16,10 +16,11 @@ export class CuotasService {
     private readonly alumnosService: AlumnosService,
   ) {}
 
-  async crear(dto: CrearCuotaDto): Promise<Cuota> {
-    await this.alumnosService.obtenerPorId(dto.alumnoId);
+  async crear(dto: CrearCuotaDto, negocioId: number): Promise<Cuota> {
+    await this.alumnosService.obtenerPorId(dto.alumnoId, negocioId);
 
     const cuota = this.repo.create({
+      negocio: { id: negocioId },
       alumno: { id: dto.alumnoId },
       mes: dto.mes,
       anio: dto.anio,
@@ -30,8 +31,8 @@ export class CuotasService {
     return this.repo.save(cuota);
   }
 
-  async listarTodos(filtros: FiltrarCuotasDto): Promise<Cuota[]> {
-    const where: FindOptionsWhere<Cuota> = {};
+  async listarTodos(filtros: FiltrarCuotasDto, negocioId: number): Promise<Cuota[]> {
+    const where: FindOptionsWhere<Cuota> = { negocio: { id: negocioId } };
     if (filtros.alumnoId) where.alumno = { id: filtros.alumnoId };
     if (filtros.estado) where.estado = filtros.estado;
     if (filtros.mes) where.mes = filtros.mes;
@@ -44,19 +45,22 @@ export class CuotasService {
     });
   }
 
-  async obtenerPorId(id: number): Promise<Cuota> {
-    const cuota = await this.repo.findOne({ where: { id }, relations: { alumno: true } });
+  async obtenerPorId(id: number, negocioId: number): Promise<Cuota> {
+    const cuota = await this.repo.findOne({
+      where: { id, negocio: { id: negocioId } },
+      relations: { alumno: true },
+    });
     if (!cuota) {
       throw new NotFoundException('No se encontró la cuota.');
     }
     return cuota;
   }
 
-  async actualizar(id: number, dto: ActualizarCuotaDto): Promise<Cuota> {
-    const cuota = await this.obtenerPorId(id);
+  async actualizar(id: number, dto: ActualizarCuotaDto, negocioId: number): Promise<Cuota> {
+    const cuota = await this.obtenerPorId(id, negocioId);
 
     if (dto.alumnoId) {
-      await this.alumnosService.obtenerPorId(dto.alumnoId);
+      await this.alumnosService.obtenerPorId(dto.alumnoId, negocioId);
       cuota.alumno = { id: dto.alumnoId } as Cuota['alumno'];
     }
     if (dto.mes !== undefined) cuota.mes = dto.mes;
@@ -68,11 +72,9 @@ export class CuotasService {
     return this.repo.save(cuota);
   }
 
-  async eliminar(id: number): Promise<{ message: string }> {
-    const result = await this.repo.delete(id);
-    if (result.affected === 0) {
-      throw new NotFoundException('No se encontró la cuota.');
-    }
+  async eliminar(id: number, negocioId: number): Promise<{ message: string }> {
+    await this.obtenerPorId(id, negocioId);
+    await this.repo.delete(id);
     return { message: 'Cuota eliminada exitosamente.' };
   }
 

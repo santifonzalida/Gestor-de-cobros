@@ -25,7 +25,7 @@ export class UsuarioService {
     return users.map(({ password, ...rest }) => rest);
   }
 
-  async create(email: string, password: string) {
+  async create(email: string, password: string, negocioId: number) {
     const existingUser = await this.repoUsuarios.findOne({ where: { email } });
     if (existingUser) {
       throw new BadRequestException('El correo electrónico ya está en uso.');
@@ -36,6 +36,7 @@ export class UsuarioService {
     const user = this.repoUsuarios.create({
       email,
       password: hash,
+      negocio: { id: negocioId },
     });
 
     return this.repoUsuarios.save(user);
@@ -82,7 +83,7 @@ export class UsuarioService {
   async findByEmail(email: string) {
     const user = await this.repoUsuarios.findOne({
       where: { email },
-      relations: { roles: { permisos: true } }, // Carga roles y permisos asociados
+      relations: { roles: { permisos: true }, negocio: true }, // Carga roles, permisos y negocio asociados
     });
     if (!user) {
       return null;

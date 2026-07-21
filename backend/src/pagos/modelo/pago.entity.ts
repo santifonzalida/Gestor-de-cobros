@@ -7,12 +7,16 @@ import {
 } from 'typeorm';
 import { Cuota } from '../../cuotas/modelo/cuota.entity';
 import { Usuario } from '../../usuarios/modelo/usuario.entity';
+import { Negocio } from '../../negocios/modelo/negocio.entity';
 import { MetodoPago } from './metodo-pago.enum';
 
 @Entity()
 export class Pago {
   @PrimaryGeneratedColumn()
   id: number;
+
+  @ManyToOne(() => Negocio, { nullable: false })
+  negocio: Negocio;
 
   @OneToOne(() => Cuota, (cuota) => cuota.pago)
   cuota: Cuota;

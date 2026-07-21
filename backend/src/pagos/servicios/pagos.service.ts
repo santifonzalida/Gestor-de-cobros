@@ -16,18 +16,25 @@ export class PagosService {
     private readonly cuotasService: CuotasService,
   ) {}
 
-  private async verificarCuotaSinPago(cuotaId: number, pagoIdAIgnorar?: number): Promise<void> {
-    const existente = await this.repo.findOne({ where: { cuota: { id: cuotaId } } });
+  private async verificarCuotaSinPago(
+    cuotaId: number,
+    negocioId: number,
+    pagoIdAIgnorar?: number,
+  ): Promise<void> {
+    const existente = await this.repo.findOne({
+      where: { cuota: { id: cuotaId }, negocio: { id: negocioId } },
+    });
     if (existente && existente.id !== pagoIdAIgnorar) {
       throw new BadRequestException('Esta cuota ya tiene un pago registrado.');
     }
   }
 
-  async crear(dto: CrearPagoDto, registradoPorId?: number): Promise<Pago> {
-    await this.cuotasService.obtenerPorId(dto.cuotaId);
-    await this.verificarCuotaSinPago(dto.cuotaId);
+  async crear(dto: CrearPagoDto, negocioId: number, registradoPorId?: number): Promise<Pago> {
+    await this.cuotasService.obtenerPorId(dto.cuotaId, negocioId);
+    await this.verificarCuotaSinPago(dto.cuotaId, negocioId);
 
     const pago = this.repo.create({
+      negocio: { id: negocioId },
       cuota: { id: dto.cuotaId },
       metodo: dto.metodo,
       montoPagado: dto.montoPagado,
@@ -37,13 +44,13 @@ export class PagosService {
     });
     const guardado = await this.repo.save(pago);
 
-    await this.cuotasService.actualizar(dto.cuotaId, { estado: EstadoCuota.PAGADA });
+    await this.cuotasService.actualizar(dto.cuotaId, { estado: EstadoCuota.PAGADA }, negocioId);
 
     return guardado;
   }
 
-  async listarTodos(filtros: FiltrarPagosDto): Promise<Pago[]> {
-    const where: FindOptionsWhere<Pago> = {};
+  async listarTodos(filtros: FiltrarPagosDto, negocioId: number): Promise<Pago[]> {
+    const where: FindOptionsWhere<Pago> = { negocio: { id: negocioId } };
     if (filtros.cuotaId) where.cuota = { id: filtros.cuotaId };
     if (filtros.metodo) where.metodo = filtros.metodo;
 
@@ -55,9 +62,9 @@ export class PagosService {
     });
   }
 
-  async obtenerPorId(id: number): Promise<Pago> {
+  async obtenerPorId(id: number, negocioId: number): Promise<Pago> {
     const pago = await this.repo.findOne({
-      where: { id },
+      where: { id, negocio: { id: negocioId } },
       relations: { cuota: true, registradoPor: true },
       select: { registradoPor: { id: true, email: true } },
     });
@@ -67,12 +74,12 @@ export class PagosService {
     return pago;
   }
 
-  async actualizar(id: number, dto: ActualizarPagoDto): Promise<Pago> {
-    const pago = await this.obtenerPorId(id);
+  async actualizar(id: number, dto: ActualizarPagoDto, negocioId: number): Promise<Pago> {
+    const pago = await this.obtenerPorId(id, negocioId);
 
     if (dto.cuotaId && dto.cuotaId !== pago.cuota.id) {
-      await this.cuotasService.obtenerPorId(dto.cuotaId);
-      await this.verificarCuotaSinPago(dto.cuotaId, pago.id);
+      await this.cuotasService.obtenerPorId(dto.cuotaId, negocioId);
+      await this.verificarCuotaSinPago(dto.cuotaId, negocioId, pago.id);
       pago.cuota = { id: dto.cuotaId } as Pago['cuota'];
     }
     if (dto.metodo !== undefined) pago.metodo = dto.metodo;
@@ -83,8 +90,8 @@ export class PagosService {
     return this.repo.save(pago);
   }
 
-  async eliminar(id: number): Promise<{ message: string }> {
-    const pago = await this.obtenerPorId(id);
+  async eliminar(id: number, negocioId: number): Promise<{ message: string }> {
+    const pago = await this.obtenerPorId(id, negocioId);
     if (pago.cuota) {
       await this.cuotasService.desvincularPago(pago.cuota.id);
     }

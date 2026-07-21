@@ -1,12 +1,16 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToOne } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, OneToOne, ManyToOne } from 'typeorm';
 import { ManyToMany, JoinTable } from 'typeorm';
 import { Alumno } from '../../alumnos/modelo/alumno.entity';
+import { Negocio } from '../../negocios/modelo/negocio.entity';
 import { Rol } from './rol.entity';
 
 @Entity('usuarios')
 export class Usuario {
   @PrimaryGeneratedColumn()
   id: number;
+
+  @ManyToOne(() => Negocio, { nullable: true })
+  negocio?: Negocio;
 
   @Column({ unique: true })
   email: string;
