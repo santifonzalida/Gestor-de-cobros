@@ -10,6 +10,7 @@ import {
 import { Usuario } from '../../usuarios/modelo/usuario.entity';
 import { Cuota } from '../../cuotas/modelo/cuota.entity';
 import { Negocio } from '../../negocios/modelo/negocio.entity';
+import { Clase } from '../../clases/modelo/clase.entity';
 
 @Entity()
 export class Alumno {
@@ -18,6 +19,9 @@ export class Alumno {
 
   @ManyToOne(() => Negocio, { nullable: false })
   negocio: Negocio;
+
+  @ManyToOne(() => Clase, { nullable: true })
+  clase?: Clase;
 
   @Column()
   nombre: string;

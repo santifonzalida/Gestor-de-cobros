@@ -1,37 +1,63 @@
+import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { Observable, delay, of } from 'rxjs';
-import { ALUMNOS_MOCK } from '../mock-data/alumnos.mock';
-import { CLASES_MOCK } from '../mock-data/clases.mock';
+import { Observable, forkJoin, map, of, switchMap } from 'rxjs';
+import { environment } from '../../../environments/environment';
 import { AlumnoConEstado } from '../models/alumno.model';
 import { Clase } from '../models/clase.model';
 import { CuotasService } from './cuotas.service';
 
+interface AlumnoApi {
+  id: number;
+  nombre: string;
+  apellido: string;
+  email?: string;
+  telefono?: string;
+  fechaAlta: string;
+  activo: boolean;
+  clase?: Clase;
+}
+
 @Injectable({ providedIn: 'root' })
 export class AlumnosService {
-  constructor(private cuotasService: CuotasService) {}
+  private readonly baseUrl = `${environment.apiUrl}/alumnos`;
 
-  private construirAlumnosConEstado(): AlumnoConEstado[] {
-    return ALUMNOS_MOCK.map((alumno) => {
-      const clase = CLASES_MOCK.find((c) => c.id === alumno.claseId)!;
-      const cuotaActual = this.cuotasService.obtenerCuotaActual(alumno.id);
-      return {
-        ...alumno,
-        clase,
-        cuotaActual,
-        estadoPago: this.cuotasService.calcularEstadoPago(cuotaActual),
-      };
-    });
-  }
+  constructor(
+    private http: HttpClient,
+    private cuotasService: CuotasService,
+  ) {}
 
   listar(): Observable<AlumnoConEstado[]> {
-    return of(this.construirAlumnosConEstado()).pipe(delay(150));
+    return this.http.get<AlumnoApi[]>(this.baseUrl).pipe(switchMap((alumnos) => this.componerConEstado(alumnos)));
   }
 
   obtenerPorId(id: number): Observable<AlumnoConEstado | undefined> {
-    return of(this.construirAlumnosConEstado().find((a) => a.id === id)).pipe(delay(150));
+    return this.http.get<AlumnoApi>(`${this.baseUrl}/${id}`).pipe(
+      switchMap((alumno) => this.componerConEstado([alumno])),
+      map((lista) => lista[0]),
+    );
   }
 
   listarClases(): Observable<Clase[]> {
-    return of(CLASES_MOCK).pipe(delay(50));
+    return this.http.get<Clase[]>(`${environment.apiUrl}/clases`);
+  }
+
+  private componerConEstado(alumnos: AlumnoApi[]): Observable<AlumnoConEstado[]> {
+    if (alumnos.length === 0) return of([]);
+
+    return forkJoin(
+      alumnos.map((alumno) =>
+        this.cuotasService.listarPorAlumno(alumno.id).pipe(
+          map((cuotas) => {
+            const cuotaActual = cuotas[0];
+            return {
+              ...alumno,
+              fechaAlta: new Date(alumno.fechaAlta),
+              cuotaActual,
+              estadoPago: this.cuotasService.calcularEstadoPago(cuotaActual),
+            };
+          }),
+        ),
+      ),
+    );
   }
 }

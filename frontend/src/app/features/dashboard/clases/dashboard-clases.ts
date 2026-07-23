@@ -22,7 +22,7 @@ export class DashboardClases {
 
   protected readonly grupos = computed<GrupoClase[]>(() =>
     this.clases().map((clase) => {
-      const deLaClase = this.alumnos().filter((a) => a.claseId === clase.id);
+      const deLaClase = this.alumnos().filter((a) => a.clase?.id === clase.id);
       return {
         clase,
         alumnos: deLaClase,

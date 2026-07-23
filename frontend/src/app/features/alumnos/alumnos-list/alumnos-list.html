@@ -51,7 +51,7 @@
               <app-avatar-initials [nombre]="a.nombre" [apellido]="a.apellido" [seed]="a.id" [size]="26" />
               {{ a.nombre }} {{ a.apellido }}
             </td>
-            <td>{{ a.clase.nombre }}</td>
+            <td>{{ a.clase?.nombre ?? 'Sin clase' }}</td>
             <td>{{ a.cuotaActual ? (a.cuotaActual.fechaVencimiento | date: 'MMMM') : '—' }}</td>
             <td>{{ a.cuotaActual ? (a.cuotaActual.fechaVencimiento | date: 'dd/MM') : '—' }}</td>
             <td>

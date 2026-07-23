@@ -7,12 +7,16 @@ import { DashboardClases } from './features/dashboard/clases/dashboard-clases';
 import { AlumnosList } from './features/alumnos/alumnos-list/alumnos-list';
 import { AlumnoDetalle } from './features/alumnos/alumno-detalle/alumno-detalle';
 import { PortalAlumno } from './features/portal/portal-alumno/portal-alumno';
+import { Login } from './features/auth/login/login';
+import { authGuard } from './core/guards/auth.guard';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
+  { path: 'login', component: Login },
   {
     path: 'dashboard',
     component: AdminShell,
+    canActivate: [authGuard],
     children: [
       {
         path: '',
@@ -29,6 +33,7 @@ export const routes: Routes = [
   {
     path: 'alumnos',
     component: AdminShell,
+    canActivate: [authGuard],
     children: [
       { path: '', component: AlumnosList },
       { path: ':id', component: AlumnoDetalle },

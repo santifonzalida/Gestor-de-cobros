@@ -33,7 +33,7 @@
           <div class="flex-1">
             <div class="text-sm font-semibold">{{ a.nombre }} {{ a.apellido }}</div>
             <div class="text-[11.5px] text-text-muted">
-              {{ a.clase.nombre }} ·
+              {{ a.clase?.nombre ?? 'Sin clase' }} ·
               @if (a.estadoPago === 'adeuda') {
                 vencida
               } @else {

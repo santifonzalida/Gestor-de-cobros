@@ -1,5 +1,6 @@
 import { Component } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
+import { Router, RouterOutlet } from '@angular/router';
+import { AuthService } from '../../core/services/auth.service';
 import { NavItem } from '../../shared/ui/nav-item/nav-item';
 
 interface NavEntry {
@@ -22,4 +23,18 @@ export class AdminShell {
     { label: 'Cuotas', icon: '💳', route: null },
     { label: 'Comprobantes', icon: '📎', route: null },
   ];
+
+  protected readonly usuario;
+
+  constructor(
+    private authService: AuthService,
+    private router: Router,
+  ) {
+    this.usuario = this.authService.usuario;
+  }
+
+  protected salir(): void {
+    this.authService.logout();
+    this.router.navigate(['/login']);
+  }
 }

@@ -26,7 +26,7 @@ export class DashboardOperativo {
 
   protected readonly alumnosFiltrados = computed(() => {
     const clase = this.claseSeleccionada();
-    return clase === null ? this.alumnos() : this.alumnos().filter((a) => a.claseId === clase);
+    return clase === null ? this.alumnos() : this.alumnos().filter((a) => a.clase?.id === clase);
   });
 
   constructor(

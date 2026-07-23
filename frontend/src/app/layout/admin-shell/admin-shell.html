@@ -5,6 +5,18 @@
     @for (entry of navEntries; track entry.label) {
       <app-nav-item [label]="entry.label" [icon]="entry.icon" [route]="entry.route" [exact]="!!entry.exact" />
     }
+    <div class="mt-auto border-t border-border pt-3">
+      @if (usuario(); as u) {
+        <div class="truncate px-2.5 pb-2 text-xs text-text-muted">{{ u.email }}</div>
+      }
+      <button
+        type="button"
+        (click)="salir()"
+        class="w-full rounded-lg px-2.5 py-2 text-left text-xs font-semibold text-text-muted transition-colors hover:bg-page"
+      >
+        Cerrar sesión
+      </button>
+    </div>
   </aside>
 
   <!-- Top bar (mobile) -->

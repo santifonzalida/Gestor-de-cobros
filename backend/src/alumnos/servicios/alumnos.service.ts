@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { ClasesService } from '../../clases/servicios/clases.service';
 import { Alumno } from '../modelo/alumno.entity';
 import { CrearAlumnoDto } from '../dtos/crear-alumno.dto';
 import { ActualizarAlumnoDto } from '../dtos/actualizar-alumno.dto';
@@ -10,12 +11,19 @@ export class AlumnosService {
   constructor(
     @InjectRepository(Alumno)
     private readonly repo: Repository<Alumno>,
+    private readonly clasesService: ClasesService,
   ) {}
 
   async crear(dto: CrearAlumnoDto, negocioId: number): Promise<Alumno> {
+    const { claseId, ...resto } = dto;
+    if (claseId) {
+      await this.clasesService.obtenerPorId(claseId, negocioId);
+    }
+
     const alumno = this.repo.create({
-      ...dto,
+      ...resto,
       negocio: { id: negocioId },
+      clase: claseId ? { id: claseId } : undefined,
       fechaAlta: new Date(),
       activo: true,
     });
@@ -25,6 +33,7 @@ export class AlumnosService {
   async listarTodos(negocioId: number): Promise<Alumno[]> {
     return this.repo.find({
       where: { negocio: { id: negocioId } },
+      relations: { clase: true },
       order: { id: 'ASC' },
     });
   }
@@ -32,6 +41,7 @@ export class AlumnosService {
   async obtenerPorId(id: number, negocioId: number): Promise<Alumno> {
     const alumno = await this.repo.findOne({
       where: { id, negocio: { id: negocioId } },
+      relations: { clase: true },
     });
     if (!alumno) {
       throw new NotFoundException('No se encontró el alumno.');
@@ -41,7 +51,13 @@ export class AlumnosService {
 
   async actualizar(id: number, dto: ActualizarAlumnoDto, negocioId: number): Promise<Alumno> {
     const alumno = await this.obtenerPorId(id, negocioId);
-    Object.assign(alumno, dto);
+    const { claseId, ...resto } = dto;
+
+    if (claseId) {
+      await this.clasesService.obtenerPorId(claseId, negocioId);
+      alumno.clase = { id: claseId } as Alumno['clase'];
+    }
+    Object.assign(alumno, resto);
     return this.repo.save(alumno);
   }
 

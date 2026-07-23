@@ -12,11 +12,12 @@ Sistema **multi-tenant** de gestión de cobros de cuotas: centraliza distintos n
 - bcrypt para hash de contraseñas
 - `class-validator` + `class-transformer` + `ValidationPipe` global (`whitelist`, `forbidNonWhitelisted`, `transform`) en `main.ts`
 - Swagger (`@nestjs/swagger`) — `SwaggerModule.setup('api', ...)` en `main.ts`, solo activo si `NODE_ENV !== 'production'`
+- CORS habilitado en `main.ts` (`app.enableCors({ origin: process.env.CORS_ORIGINS?.split(',') })`) — lee la whitelist de orígenes desde `.env` (`CORS_ORIGINS`).
 
 **Frontend** (`frontend/`):
 - Angular 22 (standalone components, signals, sin `NgModule`)
 - Tailwind CSS v4 — **ojo**: el config tiene que ser `postcss.config.json` (no `.mjs`), porque el builder de Angular (`@angular/build`) solo reconoce esa extensión para detectar PostCSS custom; sin eso, `@tailwind utilities` queda sin procesar silenciosamente (bug real que se pisó y se corrigió).
-- Todavía **100% con datos mock** (`core/services/*.service.ts` devuelven `of(...)` con delay) — no está conectado al backend real todavía.
+- **Conectado al backend real** desde esta etapa: login real + JWT, y Alumnos/Cuotas/Clases sobre `HttpClient`. El flujo de comprobante/revisión (Pagos) sigue mockeado — ver sección Frontend más abajo.
 
 ## Multi-tenancy (arquitectura central)
 
@@ -39,9 +40,13 @@ Mecanismo:
 
 ### Alumnos (`backend/src/alumnos/`)
 
-`Alumno` ([alumno.entity.ts](backend/src/alumnos/modelo/alumno.entity.ts)): `id`, `negocio` (`ManyToOne`, NOT NULL), `nombre`, `apellido`, `telefono?`, `email?`, `fechaAlta`, `activo`, `usuario?` (`OneToOne` opcional con `Usuario`, `@JoinColumn` del lado de Alumno), `cuotas` (`OneToMany`).
+`Alumno` ([alumno.entity.ts](backend/src/alumnos/modelo/alumno.entity.ts)): `id`, `negocio` (`ManyToOne`, NOT NULL), `clase?` (`ManyToOne` a `Clase`, nullable — no todo negocio necesita agrupar por clase), `nombre`, `apellido`, `telefono?`, `email?`, `fechaAlta`, `activo`, `usuario?` (`OneToOne` opcional con `Usuario`, `@JoinColumn` del lado de Alumno), `cuotas` (`OneToMany`).
 
-CRUD completo en [alumnos.service.ts](backend/src/alumnos/servicios/alumnos.service.ts) / [alumnos.controller.ts](backend/src/alumnos/controladores/alumnos.controller.ts). Controller protegido solo con `AuthGuard('jwt')` a nivel de clase — **cualquier autenticado puede hacer cualquier operación**, sin restricción de rol (a diferencia de Cuotas/Pagos).
+CRUD completo en [alumnos.service.ts](backend/src/alumnos/servicios/alumnos.service.ts) / [alumnos.controller.ts](backend/src/alumnos/controladores/alumnos.controller.ts). Controller protegido solo con `AuthGuard('jwt')` a nivel de clase — **cualquier autenticado puede hacer cualquier operación**, sin restricción de rol (a diferencia de Cuotas/Pagos). `crear`/`actualizar` validan `claseId` (si viene) contra `ClasesService.obtenerPorId(claseId, negocioId)` — mismo patrón cross-tenant-safe que usa Cuotas para validar `alumnoId`.
+
+### Clases (`backend/src/clases/`)
+
+`Clase` ([clase.entity.ts](backend/src/clases/modelo/clase.entity.ts)): `id`, `negocio` (NOT NULL), `nombre`, `icono`. Se agregó al conectar el frontend real: el diseño original agrupaba alumnos por "clase" (Fútbol infantil, Torno avanzado, etc.) pero el backend no tenía ningún concepto equivalente — se decidió explícitamente construirlo como entidad real (en vez de dejarlo decorativo o sacarlo de la UI) siguiendo el mismo patrón tenant-scoped que Alumnos/Cuotas/Pagos. CRUD completo en [clases.service.ts](backend/src/clases/servicios/clases.service.ts) / [clases.controller.ts](backend/src/clases/controladores/clases.controller.ts), mismo esquema de permisos que Cuotas (`GET` abierto, mutaciones `ADMIN`).
 
 ### Usuarios (`backend/src/usuarios/`)
 
@@ -82,13 +87,14 @@ CRUD en [pagos.service.ts](backend/src/pagos/servicios/pagos.service.ts) / [pago
 
 ## Frontend (`frontend/`)
 
-Implementa las 6 pantallas de un design handoff (dashboard en 3 variantes, listado/detalle de alumnos, portal de alumno mobile), con datos **mock** — todavía no conectado al backend.
+Implementa las 6 pantallas de un design handoff (dashboard en 3 variantes, listado/detalle de alumnos, portal de alumno mobile). Desde esta etapa, **Auth/Alumnos/Cuotas/Clases hablan con el backend real**; el flujo de comprobante/revisión de Pagos sigue mockeado (ver Pendientes).
 
 - **Tailwind**: tokens de diseño (colores OKLCH, tipografías Plus Jakarta Sans/Inter) en `src/styles.scss` vía `@theme`. Locale `es-AR` registrado en `app.config.ts` para que los `DatePipe` salgan en español.
-- **Modelos mock** (`core/models/`): `Alumno`, `Clase` (Fútbol/Taekwondo/Boxeo — **no existe en el backend**, es un concepto que introdujo el diseño), `Cuota` (con un 4º estado `EN_REVISION` que **tampoco existe en el backend**, que solo tiene `PENDIENTE`/`PAGADA`/`VENCIDA`), `Pago` (forma distinta a la del backend: `comprobanteNombre`/`cargadoPor` vs. `comprobanteUrl`/`registradoPor` reales). Esto hay que reconciliarlo cuando se conecte el frontend al backend real.
-- **Servicios mock** (`core/services/`): `AlumnosService`, `CuotasService`, `PagosService` — devuelven `Observable` con `of(...).pipe(delay(...))`, pensados para swapear a `HttpClient` sin tocar los componentes.
-- **Layout**: `AdminShell` (sidebar responsive, colapsa a barra superior en mobile) envuelve Dashboard y Alumnos; `PortalAlumno` es standalone (sin sidebar), pensado para el alumno logueado.
-- **Rutas**: `/dashboard/{resumen,operativo,clases}` (las 3 variantes del diseño, con tabs), `/alumnos` y `/alumnos/:id`, `/portal`.
+- **Auth** (`core/services/auth.service.ts`, `core/guards/auth.guard.ts`, `core/interceptors/auth.interceptor.ts`, `features/auth/login/`): `login(email, password)` pega a `POST /auth/login`, guarda el `accessToken` en `localStorage` y decodifica el payload del JWT en el cliente (`JSON.parse(atob(...))`, sin librería nueva) para exponer `usuario` (signal) con `negocioId`/`roles`/`permissions`. El interceptor agrega el `Bearer` a cada request y, ante un `401`, hace `logout()` + redirige a `/login`. `authGuard` protege `/dashboard` y `/alumnos`; `/login` es pública.
+- **Modelos** (`core/models/`): `Alumno`/`Cuota`/`Clase` ya reflejan la forma real del backend (`claseId`/`clase` opcionales — no todo alumno tiene clase asignada). `Pago` sigue con su forma mock original (`comprobanteNombre`/`cargadoPor`), porque el flujo que representa (subir comprobante → revisión) no existe en el backend — ver Pendientes. `EstadoCuota.EN_REVISION` se mantiene solo del lado frontend para ese mismo flujo mockeado; las cuotas reales del backend nunca traen ese valor.
+- **Servicios** (`core/services/`): `AlumnosService`/`CuotasService` ahora usan `HttpClient` contra `environment.apiUrl` (conversión manual de fechas string→`Date`, porque `HttpClient` no lo hace solo). `PagosService` sigue 100% mock (`subirComprobante`/`marcarEnRevision` no tienen contraparte real). `CuotasService.listarEnRevision`/`marcarEnRevision` también quedaron mockeadas en memoria por el mismo motivo.
+- **Layout**: `AdminShell` (sidebar responsive, colapsa a barra superior en mobile) envuelve Dashboard y Alumnos, y ahora muestra el email de la sesión + botón "Cerrar sesión"; `PortalAlumno` es standalone (sin sidebar) y sigue sin guard ni sesión real (`ALUMNO_ID_SESION` hardcodeado — loguearse *como* un alumno específico no está modelado en Auth todavía).
+- **Rutas**: `/login` (pública), `/dashboard/{resumen,operativo,clases}` y `/alumnos`/`/alumnos/:id` (protegidas con `authGuard`), `/portal` (sin proteger, mockeado).
 - **Environments** (`src/environments/`): `development`/`staging`/`production`, cada uno con su `apiUrl` (dev apunta a `http://localhost:3000`; staging/production tienen placeholders `TODO-completar-url-...`). Configurados en `angular.json` (`fileReplacements`) + scripts `start:staging`/`build:staging` en `package.json`.
 
 ## Decisiones tomadas
@@ -101,15 +107,23 @@ Implementa las 6 pantallas de un design handoff (dashboard en 3 variantes, lista
 - Tipos "configurables en runtime" (`Rol`, `Permiso`, `Negocio`) → entidades propias con tabla en la base.
 - Relaciones muchos-a-muchos (`Usuario↔Rol`, `Rol↔Permiso`) → `@ManyToMany` + `@JoinTable` simple, sin entidad intermedia explícita.
 - Frontend: Tailwind CSS (no Angular Material) para poder calzar el diseño custom del handoff; mock services antes que HttpClient real, ya que el backend no exponía CRUDs todavía cuando se armó el frontend.
+- `Clase`: se construyó como entidad real en el backend (tenant-scoped, igual que Alumno/Cuota/Pago) en vez de dejarla decorativa o sacarla de la UI — decisión explícita del usuario al notar que el backend no tenía ningún concepto equivalente.
+- JWT del frontend: se guarda en `localStorage` (no `sessionStorage`, no cookie httpOnly) por simplicidad en esta etapa — tradeoff de XSS conocido y no resuelto, ver Pendientes.
+- Flujo de comprobante/revisión (upload de pago por el alumno, `EstadoCuota.EN_REVISION`): queda deliberadamente fuera de esta conexión frontend-backend, consistente con la decisión anterior de construir el CRUD de Pagos "sin flujo de comprobante". Sigue 100% mockeado en el frontend.
 
 ## Entorno local
 
 - Postgres corre localmente vía Homebrew bajo el rol del sistema (`santifonzalida`). Se creó un rol `postgres` (superuser, password `postgres`) y la base `gestor_de_cobros` para que coincidan con `backend/.env`.
 - **Datos sembrados actualmente en la DB** (recreada desde cero al agregar multi-tenancy): 2 negocios — `Negocio` id 1 "Academia Demo" con admin `admin@test.com` / `test1234`, y `Negocio` id 2 "Escuela de Ceramica" con admin `admin2@test.com` / `test1234`. Ambos comparten el `Rol` global `ADMIN`. Útiles para seguir probando aislamiento cross-tenant a mano.
+- Al conectar el frontend se sembraron además 2 `Clase` por negocio (SQL directo) y, vía la API real, un `Alumno` ("Lucas Fernandez", negocio 1, clase "Fútbol infantil") con una `Cuota` de prueba — usados para verificar el flujo end-to-end en el navegador.
 
 ## Pendientes / deuda técnica conocida
 
-- **Frontend sin conectar al backend real** — es la tarea grande que sigue. Antes de reemplazar los mocks por `HttpClient` hay que: habilitar CORS en el backend (`.env` ya tiene `CORS_ORIGINS` pero no vi ningún `app.enableCors(...)` en `main.ts`), armar el login real en el frontend (hoy no existe: sin `HttpClient` provisto, sin pantalla de login, sin guardado de JWT, portal de alumno con `ALUMNO_ID_SESION` hardcodeado), y reconciliar los modelos (`Clase` no existe en el backend, `Pago` tiene forma distinta, `EstadoCuota` le falta `EN_REVISION`).
+- **Flujo de comprobante/revisión sin construir en el backend** — `PagosService.subirComprobante`/`marcarEnRevision`, los botones de upload en Alumno Detalle y Portal Alumno, y `EstadoCuota.EN_REVISION` siguen 100% mockeados en el frontend. Si se decide construirlo, falta: endpoint de upload de archivo (hoy `Pago.comprobanteUrl` es un string simple, sin manejo de archivo real — hay variables `RAILWAY_BUCKET_*` en `.env` sin usar, probablemente pensadas para esto), el valor `EN_REVISION` en el enum `EstadoCuota` del backend, y una decisión de flujo (¿quién aprueba? ¿se crea el `Pago` recién al aprobar, o antes?).
+- **Sin pantallas de alta/edición para Alumno o Cuota** — los métodos `crear`/`actualizar`/`eliminar` de `AlumnosService`/`CuotasService` (frontend) ya hablan con el backend real, pero no hay ningún formulario en la UI que los dispare todavía (solo listado/detalle).
+- **Sin pantalla de registro de pagos para el admin** — el CRUD de `Pago` del backend (registrar pago → marca Cuota como PAGADA) no tiene ninguna pantalla frontend equivalente hoy.
+- **JWT en `localStorage`** — decisión consciente por simplicidad en esta etapa, pero es vulnerable a robo de token vía XSS (a diferencia de una cookie `httpOnly`). Revisar si se justifica migrar antes de exponer esto fuera de un entorno de desarrollo.
+- **`ALUMNO_ID_SESION` hardcodeado en `PortalAlumno`** — no hay un concepto de "sesión de alumno" en Auth (el JWT hoy siempre representa a un `Usuario` de tipo staff/admin, nunca a un alumno logueándose a su propio portal).
 - **Sin Postgres Row-Level Security** — decisión consciente, pero significa que no hay ningún backstop a nivel DB si algún query nuevo se olvida el filtro por `negocioId`. Cualquier código nuevo que toque Alumnos/Cuotas/Pagos tiene que seguir el mismo patrón de scoping.
 - **Sin tests automatizados de aislamiento cross-tenant** — el chequeo que se hizo fue manual (ver arriba). Sería el candidato ideal para el primer test e2e real del proyecto, justamente porque es la única red de seguridad que existe.
 - `UsuarioService.findByRol`/`findByRolWithoutUser` usan `role.name` en un query builder crudo, pero la columna real es `nombre` — mismo bug que ya se corrigió una vez en otro lado (`findByName`), no se tocó acá todavía.

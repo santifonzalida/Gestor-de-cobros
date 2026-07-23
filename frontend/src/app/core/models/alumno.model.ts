@@ -6,7 +6,7 @@ export interface Alumno {
   nombre: string;
   apellido: string;
   email?: string;
-  claseId: number;
+  telefono?: string;
   fechaAlta: Date;
   activo: boolean;
 }
@@ -19,7 +19,7 @@ export interface Alumno {
 export type EstadoPago = 'al_dia' | 'proximo' | 'adeuda';
 
 export interface AlumnoConEstado extends Alumno {
-  clase: Clase;
+  clase?: Clase;
   estadoPago: EstadoPago;
   cuotaActual?: Cuota;
 }

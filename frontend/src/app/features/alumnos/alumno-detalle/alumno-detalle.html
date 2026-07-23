@@ -5,7 +5,7 @@
       <div class="flex-1">
         <h2 class="text-lg font-bold">{{ a.nombre }} {{ a.apellido }}</h2>
         <div class="text-[12.5px] text-text-muted">
-          {{ a.clase.nombre }} · alumno desde {{ a.fechaAlta | date: 'MMMM yyyy' }}
+          {{ a.clase?.nombre ?? 'Sin clase' }} · alumno desde {{ a.fechaAlta | date: 'MMMM yyyy' }}
           @if (a.email) {
             · {{ a.email }}
           }

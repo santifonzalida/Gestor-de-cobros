@@ -1,27 +1,43 @@
-import { Injectable, signal } from '@angular/core';
-import { Observable, delay, of } from 'rxjs';
-import { CUOTAS_MOCK } from '../mock-data/cuotas.mock';
+import { HttpClient } from '@angular/common/http';
+import { Injectable } from '@angular/core';
+import { Observable, map } from 'rxjs';
+import { environment } from '../../../environments/environment';
 import { EstadoPago } from '../models/alumno.model';
 import { Cuota, EstadoCuota } from '../models/cuota.model';
 
 const DIAS_PROXIMO_VENCIMIENTO = 7;
 
+interface CuotaApi {
+  id: number;
+  alumno: { id: number };
+  mes: number;
+  anio: number;
+  monto: number;
+  estado: EstadoCuota;
+  fechaVencimiento: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class CuotasService {
-  private readonly cuotas = signal<Cuota[]>([...CUOTAS_MOCK]);
+  private readonly baseUrl = `${environment.apiUrl}/cuotas`;
 
-  private porAlumnoOrdenadas(alumnoId: number): Cuota[] {
-    return this.cuotas()
-      .filter((c) => c.alumnoId === alumnoId)
-      .sort((a, b) => b.anio - a.anio || b.mes - a.mes);
-  }
+  /**
+   * El flujo de "comprobante en revisión" (subir comprobante → EN_REVISION) no
+   * existe en el backend todavía: se dejó fuera de alcance al construir el CRUD
+   * de Pagos. Se mantiene mockeado en memoria acá para no romper esas pantallas.
+   */
+  private cuotasEnRevision: number[] = [];
+
+  constructor(private http: HttpClient) {}
 
   listarPorAlumno(alumnoId: number): Observable<Cuota[]> {
-    return of(this.porAlumnoOrdenadas(alumnoId)).pipe(delay(150));
-  }
-
-  obtenerCuotaActual(alumnoId: number): Cuota | undefined {
-    return this.porAlumnoOrdenadas(alumnoId)[0];
+    return this.http.get<CuotaApi[]>(this.baseUrl, { params: { alumnoId } }).pipe(
+      map((cuotas) =>
+        cuotas
+          .map((c) => this.mapear(c))
+          .sort((a, b) => b.anio - a.anio || b.mes - a.mes),
+      ),
+    );
   }
 
   calcularEstadoPago(cuota: Cuota | undefined): EstadoPago {
@@ -35,12 +51,30 @@ export class CuotasService {
   }
 
   listarEnRevision(): Observable<Cuota[]> {
-    return of(this.cuotas().filter((c) => c.estado === EstadoCuota.EN_REVISION)).pipe(delay(150));
+    return this.http
+      .get<CuotaApi[]>(this.baseUrl)
+      .pipe(
+        map((cuotas) =>
+          cuotas.map((c) => this.mapear(c)).filter((c) => this.cuotasEnRevision.includes(c.id)),
+        ),
+      );
   }
 
   marcarEnRevision(cuotaId: number): void {
-    this.cuotas.update((lista) =>
-      lista.map((c) => (c.id === cuotaId ? { ...c, estado: EstadoCuota.EN_REVISION } : c)),
-    );
+    if (!this.cuotasEnRevision.includes(cuotaId)) {
+      this.cuotasEnRevision = [...this.cuotasEnRevision, cuotaId];
+    }
+  }
+
+  private mapear(c: CuotaApi): Cuota {
+    return {
+      id: c.id,
+      alumnoId: c.alumno.id,
+      mes: c.mes,
+      anio: c.anio,
+      monto: c.monto,
+      estado: c.estado,
+      fechaVencimiento: new Date(c.fechaVencimiento),
+    };
   }
 }
