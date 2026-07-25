@@ -28,6 +28,7 @@ const FORM_VACIO: NuevoAlumnoForm = { nombre: '', apellido: '', email: '', telef
 })
 export class AlumnosList {
   protected readonly alumnos = signal<AlumnoConEstado[]>([]);
+  protected readonly cargando = signal(true);
   protected readonly busqueda = signal('');
   protected readonly tab = signal<Tab>('todos');
 
@@ -61,7 +62,10 @@ export class AlumnosList {
   }
 
   private cargarAlumnos(): void {
-    this.alumnosService.listar().subscribe((alumnos) => this.alumnos.set(alumnos));
+    this.alumnosService.listar().subscribe((alumnos) => {
+      this.alumnos.set(alumnos);
+      this.cargando.set(false);
+    });
   }
 
   protected seleccionarTab(tab: Tab): void {

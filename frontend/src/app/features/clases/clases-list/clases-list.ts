@@ -19,6 +19,7 @@ const FORM_VACIO: ClaseForm = { nombre: '', icono: '', descripcion: '' };
 })
 export class ClasesList {
   protected readonly clases = signal<Clase[]>([]);
+  protected readonly cargando = signal(true);
   protected readonly mostrarModal = signal(false);
   protected readonly editandoId = signal<number | null>(null);
   protected readonly guardando = signal(false);
@@ -34,7 +35,10 @@ export class ClasesList {
   }
 
   private cargar(): void {
-    this.clasesService.listar().subscribe((clases) => this.clases.set(clases));
+    this.clasesService.listar().subscribe((clases) => {
+      this.clases.set(clases);
+      this.cargando.set(false);
+    });
   }
 
   protected abrirNueva(): void {

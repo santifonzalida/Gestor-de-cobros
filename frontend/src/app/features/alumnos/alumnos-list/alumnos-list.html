@@ -53,23 +53,38 @@
         </tr>
       </thead>
       <tbody>
-        @for (a of alumnosFiltrados(); track a.id) {
-          <tr class="cursor-pointer border-t border-border hover:bg-page" (click)="irAlDetalle(a.id)">
-            <td class="flex items-center gap-2 px-3.5 py-2.5">
-              <app-avatar-initials [nombre]="a.nombre" [apellido]="a.apellido" [seed]="a.id" [size]="26" />
-              {{ a.nombre }} {{ a.apellido }}
-            </td>
-            <td>{{ a.clase?.nombre ?? 'Sin clase' }}</td>
-            <td class="hidden sm:table-cell">{{ a.cuotaActual ? (a.cuotaActual.fechaVencimiento | date: 'MMMM') : '—' }}</td>
-            <td class="hidden sm:table-cell">{{ a.cuotaActual ? (a.cuotaActual.fechaVencimiento | date: 'dd/MM') : '—' }}</td>
-            <td>
-              <app-status-badge [tone]="badgeTone(a.estadoPago)">{{ badgeLabel(a.estadoPago) }}</app-status-badge>
-            </td>
-          </tr>
-        } @empty {
-          <tr>
-            <td colspan="5" class="px-3.5 py-6 text-center text-text-muted">Sin resultados.</td>
-          </tr>
+        @if (cargando()) {
+          @for (_ of [1, 2, 3, 4, 5]; track $index) {
+            <tr class="border-t border-border">
+              <td class="flex items-center gap-2 px-3.5 py-2.5">
+                <div class="h-6.5 w-6.5 shrink-0 animate-pulse rounded-full bg-border"></div>
+                <div class="h-3 w-28 animate-pulse rounded bg-border"></div>
+              </td>
+              <td><div class="h-3 w-20 animate-pulse rounded bg-border"></div></td>
+              <td class="hidden sm:table-cell"><div class="h-3 w-14 animate-pulse rounded bg-border"></div></td>
+              <td class="hidden sm:table-cell"><div class="h-3 w-10 animate-pulse rounded bg-border"></div></td>
+              <td><div class="h-5 w-16 animate-pulse rounded-full bg-border"></div></td>
+            </tr>
+          }
+        } @else {
+          @for (a of alumnosFiltrados(); track a.id) {
+            <tr class="cursor-pointer border-t border-border hover:bg-page" (click)="irAlDetalle(a.id)">
+              <td class="flex items-center gap-2 px-3.5 py-2.5">
+                <app-avatar-initials [nombre]="a.nombre" [apellido]="a.apellido" [seed]="a.id" [size]="26" />
+                {{ a.nombre }} {{ a.apellido }}
+              </td>
+              <td>{{ a.clase?.nombre ?? 'Sin clase' }}</td>
+              <td class="hidden sm:table-cell">{{ a.cuotaActual ? (a.cuotaActual.fechaVencimiento | date: 'MMMM' : 'UTC') : '—' }}</td>
+              <td class="hidden sm:table-cell">{{ a.cuotaActual ? (a.cuotaActual.fechaVencimiento | date: 'dd/MM' : 'UTC') : '—' }}</td>
+              <td>
+                <app-status-badge [tone]="badgeTone(a.estadoPago)">{{ badgeLabel(a.estadoPago) }}</app-status-badge>
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="5" class="px-3.5 py-6 text-center text-text-muted">Sin resultados.</td>
+            </tr>
+          }
         }
       </tbody>
     </table>

@@ -17,6 +17,7 @@ import { Roles } from '../../auth/decorators/roles.decorator';
 import { RolesGuard } from '../../auth/guards/roles.guard';
 import { ActualizarCuotaDto } from '../dtos/actualizar-cuota.dto';
 import { CrearCuotaDto } from '../dtos/crear-cuota.dto';
+import { CrearCuotaPorClaseDto } from '../dtos/crear-cuota-por-clase.dto';
 import { FiltrarCuotasDto } from '../dtos/filtrar-cuotas.dto';
 import { CuotasService } from '../servicios/cuotas.service';
 
@@ -34,6 +35,15 @@ export class CuotasController {
   @ApiResponse({ status: 201, description: 'Cuota creada exitosamente' })
   crear(@Body() dto: CrearCuotaDto, @NegocioId() negocioId: number) {
     return this.cuotasService.crear(dto, negocioId);
+  }
+
+  @Post('por-clase')
+  @UseGuards(RolesGuard)
+  @Roles('ADMIN')
+  @ApiOperation({ summary: 'Crear una cuota para cada alumno de una clase (mismo mes/monto/vencimiento)' })
+  @ApiResponse({ status: 201, description: 'Cuotas creadas; incluye cuántas se omitieron por ya existir' })
+  crearPorClase(@Body() dto: CrearCuotaPorClaseDto, @NegocioId() negocioId: number) {
+    return this.cuotasService.crearPorClase(dto, negocioId);
   }
 
   @Get()

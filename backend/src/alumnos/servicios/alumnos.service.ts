@@ -38,6 +38,13 @@ export class AlumnosService {
     });
   }
 
+  async listarPorClase(claseId: number, negocioId: number): Promise<Alumno[]> {
+    return this.repo.find({
+      where: { clase: { id: claseId }, negocio: { id: negocioId } },
+      order: { id: 'ASC' },
+    });
+  }
+
   async obtenerPorId(id: number, negocioId: number): Promise<Alumno> {
     const alumno = await this.repo.findOne({
       where: { id, negocio: { id: negocioId } },

@@ -11,7 +11,7 @@
         <div class="mb-3.5 rounded-2xl border border-border bg-surface p-4 shadow-sm">
           <div class="mb-1.5 flex items-center justify-between">
             <span class="text-[12.5px] text-text-muted">
-              Cuota de {{ cuota.fechaVencimiento | date: 'MMMM' }}
+              Cuota de {{ cuota.fechaVencimiento | date: 'MMMM' : 'UTC' }}
             </span>
             @if (cuota.estado === EstadoCuota.PAGADA) {
               <app-status-badge tone="ok">Pagada</app-status-badge>
@@ -25,7 +25,7 @@
           </div>
           <div class="font-display text-2xl font-bold">${{ cuota.monto | number }}</div>
           <div class="mt-0.5 text-[11.5px] text-text-muted">
-            Fecha límite: {{ cuota.fechaVencimiento | date: 'dd/MM/yyyy' }}
+            Fecha límite: {{ cuota.fechaVencimiento | date: 'dd/MM/yyyy' : 'UTC' }}
           </div>
         </div>
 
@@ -49,7 +49,7 @@
       <div class="flex flex-col gap-2 text-xs">
         @for (c of historial(); track c.id) {
           <div class="flex justify-between">
-            <span>{{ c.fechaVencimiento | date: 'MMMM yyyy' }}</span>
+            <span>{{ c.fechaVencimiento | date: 'MMMM yyyy' : 'UTC' }}</span>
             <app-status-badge tone="ok">Pagada</app-status-badge>
           </div>
         }

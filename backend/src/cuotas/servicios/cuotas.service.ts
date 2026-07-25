@@ -1,12 +1,19 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { FindOptionsWhere, Repository } from 'typeorm';
 import { AlumnosService } from '../../alumnos/servicios/alumnos.service';
+import { ClasesService } from '../../clases/servicios/clases.service';
 import { ActualizarCuotaDto } from '../dtos/actualizar-cuota.dto';
 import { CrearCuotaDto } from '../dtos/crear-cuota.dto';
+import { CrearCuotaPorClaseDto } from '../dtos/crear-cuota-por-clase.dto';
 import { FiltrarCuotasDto } from '../dtos/filtrar-cuotas.dto';
 import { Cuota } from '../modelo/cuota.entity';
 import { EstadoCuota } from '../modelo/estado-cuota.enum';
+
+export interface ResultadoAltaPorClase {
+  creadas: number;
+  omitidas: number;
+}
 
 @Injectable()
 export class CuotasService {
@@ -14,10 +21,35 @@ export class CuotasService {
     @InjectRepository(Cuota)
     private readonly repo: Repository<Cuota>,
     private readonly alumnosService: AlumnosService,
+    private readonly clasesService: ClasesService,
   ) {}
+
+  private async existeDuplicado(
+    alumnoId: number,
+    mes: number,
+    anio: number,
+    cuotaIdAIgnorar?: number,
+  ): Promise<boolean> {
+    const existente = await this.repo.findOne({
+      where: { alumno: { id: alumnoId }, mes, anio },
+    });
+    return !!existente && existente.id !== cuotaIdAIgnorar;
+  }
+
+  private async verificarSinDuplicado(
+    alumnoId: number,
+    mes: number,
+    anio: number,
+    cuotaIdAIgnorar?: number,
+  ): Promise<void> {
+    if (await this.existeDuplicado(alumnoId, mes, anio, cuotaIdAIgnorar)) {
+      throw new BadRequestException('Ya existe una cuota para ese alumno en ese mes/año.');
+    }
+  }
 
   async crear(dto: CrearCuotaDto, negocioId: number): Promise<Cuota> {
     await this.alumnosService.obtenerPorId(dto.alumnoId, negocioId);
+    await this.verificarSinDuplicado(dto.alumnoId, dto.mes, dto.anio);
 
     const cuota = this.repo.create({
       negocio: { id: negocioId },
@@ -29,6 +61,35 @@ export class CuotasService {
       estado: dto.estado ?? EstadoCuota.PENDIENTE,
     });
     return this.repo.save(cuota);
+  }
+
+  async crearPorClase(dto: CrearCuotaPorClaseDto, negocioId: number): Promise<ResultadoAltaPorClase> {
+    await this.clasesService.obtenerPorId(dto.claseId, negocioId);
+    const alumnos = await this.alumnosService.listarPorClase(dto.claseId, negocioId);
+
+    let creadas = 0;
+    let omitidas = 0;
+
+    for (const alumno of alumnos) {
+      if (await this.existeDuplicado(alumno.id, dto.mes, dto.anio)) {
+        omitidas++;
+        continue;
+      }
+
+      const cuota = this.repo.create({
+        negocio: { id: negocioId },
+        alumno: { id: alumno.id },
+        mes: dto.mes,
+        anio: dto.anio,
+        monto: dto.monto,
+        fechaVencimiento: new Date(dto.fechaVencimiento),
+        estado: EstadoCuota.PENDIENTE,
+      });
+      await this.repo.save(cuota);
+      creadas++;
+    }
+
+    return { creadas, omitidas };
   }
 
   async listarTodos(filtros: FiltrarCuotasDto, negocioId: number): Promise<Cuota[]> {
@@ -61,8 +122,15 @@ export class CuotasService {
 
     if (dto.alumnoId) {
       await this.alumnosService.obtenerPorId(dto.alumnoId, negocioId);
-      cuota.alumno = { id: dto.alumnoId } as Cuota['alumno'];
     }
+    const alumnoId = dto.alumnoId ?? cuota.alumno.id;
+    const mes = dto.mes ?? cuota.mes;
+    const anio = dto.anio ?? cuota.anio;
+    if (dto.alumnoId !== undefined || dto.mes !== undefined || dto.anio !== undefined) {
+      await this.verificarSinDuplicado(alumnoId, mes, anio, cuota.id);
+    }
+
+    if (dto.alumnoId) cuota.alumno = { id: dto.alumnoId } as Cuota['alumno'];
     if (dto.mes !== undefined) cuota.mes = dto.mes;
     if (dto.anio !== undefined) cuota.anio = dto.anio;
     if (dto.monto !== undefined) cuota.monto = dto.monto;

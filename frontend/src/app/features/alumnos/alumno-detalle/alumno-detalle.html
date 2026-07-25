@@ -5,7 +5,7 @@
       <div class="flex-1">
         <h2 class="text-lg font-bold">{{ a.nombre }} {{ a.apellido }}</h2>
         <div class="text-[12.5px] text-text-muted">
-          {{ a.clase?.nombre ?? 'Sin clase' }} · alumno desde {{ a.fechaAlta | date: 'MMMM yyyy' }}
+          {{ a.clase?.nombre ?? 'Sin clase' }} · alumno desde {{ a.fechaAlta | date: 'MMMM yyyy' : 'UTC' }}
           @if (a.email) {
             · {{ a.email }}
           }
@@ -27,7 +27,7 @@
         <div class="flex flex-col gap-2.5 text-[12.5px]">
           @for (c of cuotas(); track c.id) {
             <div class="flex items-center justify-between">
-              <span>{{ c.fechaVencimiento | date: 'MMMM yyyy' }} — ${{ c.monto | number }}</span>
+              <span>{{ c.fechaVencimiento | date: 'MMMM yyyy' : 'UTC' }} — ${{ c.monto | number }}</span>
               <app-status-badge [tone]="badgeTone(c.estado)">{{ badgeLabel(c) }}</app-status-badge>
             </div>
           }

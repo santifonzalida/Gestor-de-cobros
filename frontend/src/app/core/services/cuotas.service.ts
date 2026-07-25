@@ -17,6 +17,43 @@ interface CuotaApi {
   fechaVencimiento: string;
 }
 
+interface CuotaApiConAlumno extends CuotaApi {
+  alumno: { id: number; nombre: string; apellido: string };
+}
+
+export interface CuotaConAlumno extends Cuota {
+  alumno: { id: number; nombre: string; apellido: string };
+}
+
+export interface CuotaForm {
+  alumnoId: number;
+  mes: number;
+  anio: number;
+  monto: number;
+  fechaVencimiento: string;
+  estado?: EstadoCuota;
+}
+
+export interface FiltrosCuotas {
+  alumnoId?: number;
+  estado?: EstadoCuota;
+  mes?: number;
+  anio?: number;
+}
+
+export interface CuotaPorClaseForm {
+  claseId: number;
+  mes: number;
+  anio: number;
+  monto: number;
+  fechaVencimiento: string;
+}
+
+export interface ResultadoAltaPorClase {
+  creadas: number;
+  omitidas: number;
+}
+
 @Injectable({ providedIn: 'root' })
 export class CuotasService {
   private readonly baseUrl = `${environment.apiUrl}/cuotas`;
@@ -38,6 +75,34 @@ export class CuotasService {
           .sort((a, b) => b.anio - a.anio || b.mes - a.mes),
       ),
     );
+  }
+
+  listarTodos(filtros: FiltrosCuotas = {}): Observable<CuotaConAlumno[]> {
+    const params: Record<string, string | number> = {};
+    if (filtros.alumnoId) params['alumnoId'] = filtros.alumnoId;
+    if (filtros.estado) params['estado'] = filtros.estado;
+    if (filtros.mes) params['mes'] = filtros.mes;
+    if (filtros.anio) params['anio'] = filtros.anio;
+
+    return this.http
+      .get<CuotaApiConAlumno[]>(this.baseUrl, { params })
+      .pipe(map((cuotas) => cuotas.map((c) => ({ ...this.mapear(c), alumno: c.alumno }))));
+  }
+
+  crear(dto: CuotaForm): Observable<Cuota> {
+    return this.http.post<CuotaApi>(this.baseUrl, dto).pipe(map((c) => this.mapear(c)));
+  }
+
+  crearPorClase(dto: CuotaPorClaseForm): Observable<ResultadoAltaPorClase> {
+    return this.http.post<ResultadoAltaPorClase>(`${this.baseUrl}/por-clase`, dto);
+  }
+
+  actualizar(id: number, dto: Partial<CuotaForm>): Observable<Cuota> {
+    return this.http.patch<CuotaApi>(`${this.baseUrl}/${id}`, dto).pipe(map((c) => this.mapear(c)));
+  }
+
+  eliminar(id: number): Observable<{ message: string }> {
+    return this.http.delete<{ message: string }>(`${this.baseUrl}/${id}`);
   }
 
   calcularEstadoPago(cuota: Cuota | undefined): EstadoPago {

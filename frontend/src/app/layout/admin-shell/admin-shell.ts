@@ -20,7 +20,7 @@ export class AdminShell {
     { label: 'Dashboard', icon: '📊', route: '/dashboard' },
     { label: 'Alumnos', icon: '🧑‍🎓', route: '/alumnos' },
     { label: 'Clases', icon: '🥋', route: '/clases' },
-    { label: 'Cuotas', icon: '💳', route: null },
+    { label: 'Cuotas', icon: '💳', route: '/cuotas' },
     { label: 'Comprobantes', icon: '📎', route: null },
   ];
 
