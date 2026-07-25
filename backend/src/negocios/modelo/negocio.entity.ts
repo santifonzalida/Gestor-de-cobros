@@ -8,6 +8,12 @@ export class Negocio {
   @Column()
   nombre: string;
 
+  @Column({ nullable: true })
+  descripcion: string;
+
   @Column({ default: true })
   activo: boolean;
+
+  @Column({ nullable: true })
+  fechaAlta: Date;
 }

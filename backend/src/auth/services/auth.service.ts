@@ -25,7 +25,11 @@ export class AuthService {
     const role = await this.usersService.findByName(roleName);
     if (!role) throw new BadRequestException(`El rol '${roleName}' no existe.`);
 
-    const user = await this.usersService.create(dto.email, dto.password, negocioId);
+    const user = await this.usersService.create(
+      dto.email,
+      dto.password,
+      negocioId,
+    );
     user.roles = [role];
     await this.usersService.save(user);
     return user;

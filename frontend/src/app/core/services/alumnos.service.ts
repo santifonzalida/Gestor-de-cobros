@@ -17,6 +17,14 @@ interface AlumnoApi {
   clase?: Clase;
 }
 
+export interface NuevoAlumno {
+  nombre: string;
+  apellido: string;
+  email?: string;
+  telefono?: string;
+  claseId?: number;
+}
+
 @Injectable({ providedIn: 'root' })
 export class AlumnosService {
   private readonly baseUrl = `${environment.apiUrl}/alumnos`;
@@ -37,8 +45,10 @@ export class AlumnosService {
     );
   }
 
-  listarClases(): Observable<Clase[]> {
-    return this.http.get<Clase[]>(`${environment.apiUrl}/clases`);
+  crear(nuevoAlumno: NuevoAlumno): Observable<AlumnoConEstado> {
+    return this.http
+      .post<AlumnoApi>(this.baseUrl, nuevoAlumno)
+      .pipe(switchMap((alumno) => this.componerConEstado([alumno]).pipe(map((lista) => lista[0]))));
   }
 
   private componerConEstado(alumnos: AlumnoApi[]): Observable<AlumnoConEstado[]> {

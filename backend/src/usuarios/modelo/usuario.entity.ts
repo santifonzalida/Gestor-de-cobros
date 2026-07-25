@@ -1,4 +1,10 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToOne, ManyToOne } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  OneToOne,
+  ManyToOne,
+} from 'typeorm';
 import { ManyToMany, JoinTable } from 'typeorm';
 import { Alumno } from '../../alumnos/modelo/alumno.entity';
 import { Negocio } from '../../negocios/modelo/negocio.entity';

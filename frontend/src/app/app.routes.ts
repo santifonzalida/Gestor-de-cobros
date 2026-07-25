@@ -6,6 +6,7 @@ import { DashboardOperativo } from './features/dashboard/operativo/dashboard-ope
 import { DashboardClases } from './features/dashboard/clases/dashboard-clases';
 import { AlumnosList } from './features/alumnos/alumnos-list/alumnos-list';
 import { AlumnoDetalle } from './features/alumnos/alumno-detalle/alumno-detalle';
+import { ClasesList } from './features/clases/clases-list/clases-list';
 import { PortalAlumno } from './features/portal/portal-alumno/portal-alumno';
 import { Login } from './features/auth/login/login';
 import { authGuard } from './core/guards/auth.guard';
@@ -38,6 +39,12 @@ export const routes: Routes = [
       { path: '', component: AlumnosList },
       { path: ':id', component: AlumnoDetalle },
     ],
+  },
+  {
+    path: 'clases',
+    component: AdminShell,
+    canActivate: [authGuard],
+    children: [{ path: '', component: ClasesList }],
   },
   { path: 'portal', component: PortalAlumno },
   { path: '**', redirectTo: 'dashboard' },

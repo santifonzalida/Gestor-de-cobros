@@ -1,6 +1,7 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { Alumno } from '../../alumnos/modelo/alumno.entity';
 import { ActualizarClaseDto } from '../dtos/actualizar-clase.dto';
 import { CrearClaseDto } from '../dtos/crear-clase.dto';
 import { Clase } from '../modelo/clase.entity';
@@ -10,6 +11,8 @@ export class ClasesService {
   constructor(
     @InjectRepository(Clase)
     private readonly repo: Repository<Clase>,
+    @InjectRepository(Alumno)
+    private readonly alumnoRepo: Repository<Alumno>,
   ) {}
 
   async crear(dto: CrearClaseDto, negocioId: number): Promise<Clase> {
@@ -37,6 +40,14 @@ export class ClasesService {
 
   async eliminar(id: number, negocioId: number): Promise<{ message: string }> {
     await this.obtenerPorId(id, negocioId);
+
+    const alumnosEnClase = await this.alumnoRepo.count({ where: { clase: { id } } });
+    if (alumnosEnClase > 0) {
+      throw new BadRequestException(
+        'No se puede eliminar: hay alumnos asignados a esta clase.',
+      );
+    }
+
     await this.repo.delete(id);
     return { message: 'Clase eliminada exitosamente.' };
   }

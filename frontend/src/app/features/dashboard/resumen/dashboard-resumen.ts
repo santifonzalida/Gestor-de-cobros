@@ -22,6 +22,7 @@ interface ComprobantePendiente {
 export class DashboardResumen {
   protected readonly alumnos = signal<AlumnoConEstado[]>([]);
   protected readonly comprobantesPendientes = signal<ComprobantePendiente[]>([]);
+  protected readonly cargando = signal(true);
   protected readonly hoy = new Date();
 
   protected readonly recaudado = computed(() =>
@@ -58,6 +59,7 @@ export class DashboardResumen {
             archivo: `comprobante_${alumnos.find((a) => a.id === c.alumnoId)?.nombre.toLowerCase()}.jpg`,
           })),
         );
+        this.cargando.set(false);
       });
     });
   }

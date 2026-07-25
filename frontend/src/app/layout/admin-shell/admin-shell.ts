@@ -19,7 +19,7 @@ export class AdminShell {
   protected readonly navEntries: NavEntry[] = [
     { label: 'Dashboard', icon: '📊', route: '/dashboard' },
     { label: 'Alumnos', icon: '🧑‍🎓', route: '/alumnos' },
-    { label: 'Clases', icon: '🥋', route: '/dashboard/clases', exact: true },
+    { label: 'Clases', icon: '🥋', route: '/clases' },
     { label: 'Cuotas', icon: '💳', route: null },
     { label: 'Comprobantes', icon: '📎', route: null },
   ];

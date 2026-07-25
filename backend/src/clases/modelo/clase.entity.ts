@@ -14,4 +14,10 @@ export class Clase {
 
   @Column()
   icono: string;
+
+  @Column({ nullable: true })
+  descripcion?: string;
+
+  @Column({ nullable: true })
+  fechaCreacion?: Date;
 }

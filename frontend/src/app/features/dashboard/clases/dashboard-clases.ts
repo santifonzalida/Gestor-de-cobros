@@ -2,6 +2,7 @@ import { Component, computed, signal } from '@angular/core';
 import { AlumnoConEstado } from '../../../core/models/alumno.model';
 import { Clase } from '../../../core/models/clase.model';
 import { AlumnosService } from '../../../core/services/alumnos.service';
+import { ClasesService } from '../../../core/services/clases.service';
 import { AvatarInitials } from '../../../shared/ui/avatar-initials/avatar-initials';
 import { BadgeTone } from '../../../shared/ui/status-badge/status-badge';
 
@@ -31,9 +32,12 @@ export class DashboardClases {
     }),
   );
 
-  constructor(private alumnosService: AlumnosService) {
+  constructor(
+    private alumnosService: AlumnosService,
+    private clasesService: ClasesService,
+  ) {
     this.alumnosService.listar().subscribe((alumnos) => this.alumnos.set(alumnos));
-    this.alumnosService.listarClases().subscribe((clases) => this.clases.set(clases));
+    this.clasesService.listar().subscribe((clases) => this.clases.set(clases));
   }
 
   protected ring(estado: AlumnoConEstado['estadoPago']): BadgeTone {
