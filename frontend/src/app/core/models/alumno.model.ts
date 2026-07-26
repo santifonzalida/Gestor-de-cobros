@@ -9,6 +9,7 @@ export interface Alumno {
   telefono?: string;
   fechaAlta: Date;
   activo: boolean;
+  usuario?: { id: number };
 }
 
 /**

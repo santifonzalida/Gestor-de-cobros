@@ -15,6 +15,7 @@ interface AlumnoApi {
   fechaAlta: string;
   activo: boolean;
   clase?: Clase;
+  usuario?: { id: number };
 }
 
 export interface NuevoAlumno {
@@ -49,6 +50,10 @@ export class AlumnosService {
     return this.http
       .post<AlumnoApi>(this.baseUrl, nuevoAlumno)
       .pipe(switchMap((alumno) => this.componerConEstado([alumno]).pipe(map((lista) => lista[0]))));
+  }
+
+  invitar(alumnoId: number): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(`${environment.apiUrl}/auth/invitar-alumno`, { alumnoId });
   }
 
   private componerConEstado(alumnos: AlumnoApi[]): Observable<AlumnoConEstado[]> {

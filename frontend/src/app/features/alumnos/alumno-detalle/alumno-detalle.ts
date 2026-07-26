@@ -1,6 +1,7 @@
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { Component, ElementRef, signal, viewChild } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
+import { HttpErrorResponse } from '@angular/common/http';
 import { AlumnoConEstado } from '../../../core/models/alumno.model';
 import { Cuota, EstadoCuota } from '../../../core/models/cuota.model';
 import { MetodoPago, Pago } from '../../../core/models/pago.model';
@@ -28,6 +29,10 @@ export class AlumnoDetalle {
   protected readonly alumno = signal<AlumnoConEstado | undefined>(undefined);
   protected readonly cuotas = signal<Cuota[]>([]);
   protected readonly pagos = signal<Pago[]>([]);
+
+  protected readonly invitando = signal(false);
+  protected readonly mensajeInvitacion = signal<string | null>(null);
+  protected readonly errorInvitacion = signal<string | null>(null);
 
   private readonly inputArchivo = viewChild<ElementRef<HTMLInputElement>>('inputArchivo');
   private alumnoId!: number;
@@ -89,6 +94,26 @@ export class AlumnoDetalle {
 
   protected etiquetaMetodo(metodo: MetodoPago): string {
     return ETIQUETAS_METODO[metodo];
+  }
+
+  protected invitar(): void {
+    const alumnoId = this.alumno()?.id;
+    if (!alumnoId) return;
+
+    this.errorInvitacion.set(null);
+    this.mensajeInvitacion.set(null);
+    this.invitando.set(true);
+
+    this.alumnosService.invitar(alumnoId).subscribe({
+      next: () => {
+        this.invitando.set(false);
+        this.mensajeInvitacion.set(`Invitación enviada a ${this.alumno()?.email}.`);
+      },
+      error: (err: HttpErrorResponse) => {
+        this.invitando.set(false);
+        this.errorInvitacion.set(err.error?.message ?? 'No se pudo enviar la invitación.');
+      },
+    });
   }
 
   protected abrirSelectorArchivo(): void {

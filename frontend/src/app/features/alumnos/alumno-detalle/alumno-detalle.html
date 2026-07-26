@@ -12,6 +12,17 @@
         </div>
       </div>
       <app-status-badge [tone]="estadoAlumnoTone()">{{ estadoAlumnoLabel() }}</app-status-badge>
+      @if (a.email && !a.usuario) {
+        <button
+          (click)="invitar()"
+          [disabled]="invitando()"
+          class="rounded-lg border border-border px-4 py-2.5 text-sm font-semibold text-text-muted transition-colors hover:bg-page disabled:opacity-60"
+        >
+          {{ invitando() ? 'Enviando…' : 'Invitar a crear cuenta' }}
+        </button>
+      } @else if (a.usuario) {
+        <span class="text-[11.5px] text-text-muted">Ya tiene cuenta</span>
+      }
       <button
         (click)="abrirSelectorArchivo()"
         class="rounded-lg bg-accent px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-accent-hover"
@@ -20,6 +31,17 @@
       </button>
       <input #inputArchivo type="file" accept="image/*,.pdf" class="hidden" (change)="onArchivoSeleccionado($event)" />
     </div>
+
+    @if (mensajeInvitacion(); as msg) {
+      <div class="mb-3.5 rounded-lg border border-ok-text/20 bg-ok-bg px-3.5 py-2.5 text-xs font-medium text-ok-text">
+        {{ msg }}
+      </div>
+    }
+    @if (errorInvitacion(); as err) {
+      <div class="mb-3.5 rounded-lg border border-debt-text/20 bg-debt-bg px-3.5 py-2.5 text-xs font-medium text-debt-text">
+        {{ err }}
+      </div>
+    }
 
     <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
       <div class="rounded-2xl border border-border bg-surface p-4">

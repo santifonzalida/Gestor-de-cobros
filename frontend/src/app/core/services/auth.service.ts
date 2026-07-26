@@ -23,6 +23,13 @@ export class AuthService {
       .pipe(tap((respuesta) => this.guardarToken(respuesta.accessToken)));
   }
 
+  completarInvitacion(token: string, password: string): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(`${environment.apiUrl}/auth/completar-invitacion`, {
+      token,
+      password,
+    });
+  }
+
   logout(): void {
     localStorage.removeItem(TOKEN_KEY);
     this.token.set(null);

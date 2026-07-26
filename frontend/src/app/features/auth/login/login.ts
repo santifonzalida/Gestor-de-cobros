@@ -24,9 +24,9 @@ export class Login {
     this.cargando.set(true);
 
     this.authService.login(this.email(), this.password()).subscribe({
-      next: () => {
+      next: (respuesta) => {
         this.cargando.set(false);
-        this.router.navigate(['/dashboard']);
+        this.router.navigateByUrl(respuesta.ruta);
       },
       error: () => {
         this.cargando.set(false);

@@ -1,5 +1,9 @@
 <div class="mx-auto min-h-screen max-w-md bg-page sm:min-h-0 sm:py-8">
-  @if (alumno(); as a) {
+  @if (sinAlumnoVinculado()) {
+    <div class="p-6 text-center text-sm text-text-muted">
+      Tu cuenta no está vinculada a ningún alumno todavía.
+    </div>
+  } @else if (alumno(); as a) {
     <div class="rounded-b-none bg-accent px-5 pb-10 pt-5 text-white sm:rounded-b-2xl">
       <div class="text-[13px] opacity-85">Hola,</div>
       <div class="font-display text-lg font-bold">{{ a.nombre }} {{ a.apellido }}</div>

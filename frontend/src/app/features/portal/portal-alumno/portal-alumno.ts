@@ -4,12 +4,10 @@ import { AlumnoConEstado } from '../../../core/models/alumno.model';
 import { Cuota, EstadoCuota } from '../../../core/models/cuota.model';
 import { MetodoPago, Pago } from '../../../core/models/pago.model';
 import { AlumnosService } from '../../../core/services/alumnos.service';
+import { AuthService } from '../../../core/services/auth.service';
 import { CuotasService } from '../../../core/services/cuotas.service';
 import { PagosService } from '../../../core/services/pagos.service';
 import { StatusBadge } from '../../../shared/ui/status-badge/status-badge';
-
-// En una sesión real, el alumno vendría del usuario autenticado (JWT), no hardcodeado.
-const ALUMNO_ID_SESION = 5;
 
 const ETIQUETAS_METODO: Record<MetodoPago, string> = {
   EFECTIVO: 'Efectivo',
@@ -29,20 +27,29 @@ export class PortalAlumno {
   protected readonly alumno = signal<AlumnoConEstado | undefined>(undefined);
   protected readonly cuotas = signal<Cuota[]>([]);
   protected readonly pagos = signal<Pago[]>([]);
+  protected readonly sinAlumnoVinculado = signal(false);
 
   private readonly inputArchivo = viewChild<ElementRef<HTMLInputElement>>('inputArchivo');
+  private alumnoId: number | null;
 
   constructor(
     private alumnosService: AlumnosService,
+    private authService: AuthService,
     private cuotasService: CuotasService,
     private pagosService: PagosService,
   ) {
+    this.alumnoId = this.authService.usuario()?.alumnoId ?? null;
+    if (this.alumnoId === null) {
+      this.sinAlumnoVinculado.set(true);
+      return;
+    }
     this.cargarDatos();
   }
 
   private cargarDatos(): void {
-    this.alumnosService.obtenerPorId(ALUMNO_ID_SESION).subscribe((alumno) => this.alumno.set(alumno));
-    this.cuotasService.listarPorAlumno(ALUMNO_ID_SESION).subscribe((cuotas) => {
+    if (this.alumnoId === null) return;
+    this.alumnosService.obtenerPorId(this.alumnoId).subscribe((alumno) => this.alumno.set(alumno));
+    this.cuotasService.listarPorAlumno(this.alumnoId).subscribe((cuotas) => {
       this.cuotas.set(cuotas);
       this.pagosService.listarPorCuotas(cuotas.map((c) => c.id)).subscribe((pagos) => this.pagos.set(pagos));
     });

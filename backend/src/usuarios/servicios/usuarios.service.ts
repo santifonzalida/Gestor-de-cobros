@@ -33,10 +33,14 @@ export class UsuarioService {
 
     const hash = await bcrypt.hash(password, 10);
 
+    const ahora = new Date();
     const user = this.repoUsuarios.create({
       email,
       password: hash,
       negocio: { id: negocioId },
+      fechaAlta: ahora,
+      fechaModificacion: ahora,
+      ultimoAcceso: ahora,
     });
 
     return this.repoUsuarios.save(user);
@@ -83,7 +87,7 @@ export class UsuarioService {
   async findByEmail(email: string) {
     const user = await this.repoUsuarios.findOne({
       where: { email },
-      relations: { roles: { permisos: true }, negocio: true }, // Carga roles, permisos y negocio asociados
+      relations: { roles: { permisos: true }, negocio: true, alumno: true }, // Carga roles, permisos, negocio y alumno vinculado
     });
     if (!user) {
       return null;

@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ClasesService } from '../../clases/servicios/clases.service';
@@ -33,7 +33,8 @@ export class AlumnosService {
   async listarTodos(negocioId: number): Promise<Alumno[]> {
     return this.repo.find({
       where: { negocio: { id: negocioId } },
-      relations: { clase: true },
+      relations: { clase: true, usuario: true },
+      select: { usuario: { id: true } },
       order: { id: 'ASC' },
     });
   }
@@ -48,12 +49,22 @@ export class AlumnosService {
   async obtenerPorId(id: number, negocioId: number): Promise<Alumno> {
     const alumno = await this.repo.findOne({
       where: { id, negocio: { id: negocioId } },
-      relations: { clase: true },
+      relations: { clase: true, usuario: true },
+      select: { usuario: { id: true } },
     });
     if (!alumno) {
       throw new NotFoundException('No se encontró el alumno.');
     }
     return alumno;
+  }
+
+  async vincularUsuario(alumnoId: number, usuarioId: number, negocioId: number): Promise<void> {
+    const alumno = await this.obtenerPorId(alumnoId, negocioId);
+    if (alumno.usuario) {
+      throw new BadRequestException('Este alumno ya tiene un usuario vinculado.');
+    }
+    alumno.usuario = { id: usuarioId } as Alumno['usuario'];
+    await this.repo.save(alumno);
   }
 
   async actualizar(id: number, dto: ActualizarAlumnoDto, negocioId: number): Promise<Alumno> {

@@ -9,6 +9,8 @@ import {
 } from '@nestjs/common';
 import { AuthService } from '../services/auth.service';
 import { RegistrarUsuarioDto } from '../dtos/registrarUsuarioDto';
+import { InvitarAlumnoDto } from '../dtos/invitar-alumno.dto';
+import { CompletarInvitacionDto } from '../dtos/completar-invitacion.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { RolesGuard } from 'src/auth/guards/roles.guard';
 import { Roles } from 'src/auth/decorators/roles.decorator';
@@ -39,6 +41,25 @@ export class AuthController {
   @ApiResponse({ status: 403, description: 'Sin permisos' })
   register(@Body() dto: RegistrarUsuarioDto, @NegocioId() negocioId: number) {
     return this.authService.register(dto, negocioId);
+  }
+
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @ApiBearerAuth()
+  @Roles('ADMIN')
+  @Post('invitar-alumno')
+  @ApiOperation({ summary: 'Invitar a un alumno a crear su cuenta de acceso al portal' })
+  @ApiResponse({ status: 201, description: 'Invitación enviada' })
+  @ApiResponse({ status: 400, description: 'El alumno no tiene email o ya tiene un usuario vinculado' })
+  invitarAlumno(@Body() dto: InvitarAlumnoDto, @NegocioId() negocioId: number) {
+    return this.authService.generarInvitacion(dto.alumnoId, negocioId);
+  }
+
+  @Post('completar-invitacion')
+  @ApiOperation({ summary: 'Completar la invitación de un alumno definiendo su contraseña' })
+  @ApiResponse({ status: 201, description: 'Cuenta creada exitosamente' })
+  @ApiResponse({ status: 400, description: 'Token inválido, vencido, o el alumno ya tiene un usuario vinculado' })
+  completarInvitacion(@Body() dto: CompletarInvitacionDto) {
+    return this.authService.completarInvitacion(dto.token, dto.password);
   }
 
   @UseGuards(AuthGuard('local'))
