@@ -138,7 +138,7 @@ export class CuotasService {
       mes: c.mes,
       anio: c.anio,
       monto: c.monto,
-      estado: c.estado,
+      estado: this.cuotasEnRevision.includes(c.id) ? EstadoCuota.EN_REVISION : c.estado,
       fechaVencimiento: new Date(c.fechaVencimiento),
     };
   }

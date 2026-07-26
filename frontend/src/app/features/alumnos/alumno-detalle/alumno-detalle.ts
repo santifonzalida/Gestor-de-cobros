@@ -3,12 +3,19 @@ import { Component, ElementRef, signal, viewChild } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { AlumnoConEstado } from '../../../core/models/alumno.model';
 import { Cuota, EstadoCuota } from '../../../core/models/cuota.model';
-import { Pago } from '../../../core/models/pago.model';
+import { MetodoPago, Pago } from '../../../core/models/pago.model';
 import { AlumnosService } from '../../../core/services/alumnos.service';
 import { CuotasService } from '../../../core/services/cuotas.service';
 import { PagosService } from '../../../core/services/pagos.service';
 import { AvatarInitials } from '../../../shared/ui/avatar-initials/avatar-initials';
 import { StatusBadge } from '../../../shared/ui/status-badge/status-badge';
+
+const ETIQUETAS_METODO: Record<MetodoPago, string> = {
+  EFECTIVO: 'Efectivo',
+  TRANSFERENCIA: 'Transferencia',
+  TARJETA: 'Tarjeta',
+  MERCADOPAGO: 'Mercado Pago',
+};
 
 @Component({
   selector: 'app-alumno-detalle',
@@ -63,7 +70,7 @@ export class AlumnoDetalle {
   }
 
   private formatearFecha(fecha: Date): string {
-    return `${String(fecha.getDate()).padStart(2, '0')}/${String(fecha.getMonth() + 1).padStart(2, '0')}`;
+    return `${String(fecha.getUTCDate()).padStart(2, '0')}/${String(fecha.getUTCMonth() + 1).padStart(2, '0')}`;
   }
 
   protected estadoAlumnoTone(): 'ok' | 'debt' | 'soon' {
@@ -76,6 +83,14 @@ export class AlumnoDetalle {
     return estado === 'al_dia' ? 'Al día' : estado === 'adeuda' ? 'Adeuda' : 'Próximo a vencer';
   }
 
+  protected cuotaDePago(pago: Pago): Cuota | undefined {
+    return this.cuotas().find((c) => c.id === pago.cuotaId);
+  }
+
+  protected etiquetaMetodo(metodo: MetodoPago): string {
+    return ETIQUETAS_METODO[metodo];
+  }
+
   protected abrirSelectorArchivo(): void {
     this.inputArchivo()?.nativeElement.click();
   }
@@ -84,7 +99,7 @@ export class AlumnoDetalle {
     const archivo = (event.target as HTMLInputElement).files?.[0];
     const cuotaActual = this.alumno()?.cuotaActual;
     if (archivo && cuotaActual) {
-      this.pagosService.subirComprobante(cuotaActual.id, archivo, 'admin');
+      this.cuotasService.marcarEnRevision(cuotaActual.id);
       this.cargarDatos();
     }
   }

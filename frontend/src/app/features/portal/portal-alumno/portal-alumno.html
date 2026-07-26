@@ -11,7 +11,7 @@
         <div class="mb-3.5 rounded-2xl border border-border bg-surface p-4 shadow-sm">
           <div class="mb-1.5 flex items-center justify-between">
             <span class="text-[12.5px] text-text-muted">
-              Cuota de {{ cuota.fechaVencimiento | date: 'MMMM' : 'UTC' }}
+              Cuota de {{ cuota.fechaVencimiento | date: 'MMMM yyyy' : 'UTC' }}
             </span>
             @if (cuota.estado === EstadoCuota.PAGADA) {
               <app-status-badge tone="ok">Pagada</app-status-badge>
@@ -27,9 +27,21 @@
           <div class="mt-0.5 text-[11.5px] text-text-muted">
             Fecha límite: {{ cuota.fechaVencimiento | date: 'dd/MM/yyyy' : 'UTC' }}
           </div>
+
+          @if (cuota.estado === EstadoCuota.PAGADA) {
+            @if (pagoDeLaCuotaActual(); as pago) {
+              <div class="mt-2.5 border-t border-border pt-2.5 text-[11.5px] text-text-muted">
+                Pagado el {{ pago.fechaPago | date: 'dd/MM/yyyy' : 'UTC' }} · {{ etiquetaMetodo(pago.metodo) }}
+              </div>
+            }
+          }
         </div>
 
-        @if (cuota.estado !== EstadoCuota.PAGADA) {
+        @if (cuota.estado === EstadoCuota.EN_REVISION) {
+          <div class="mb-3.5 rounded-2xl border border-dashed border-border bg-surface p-4.5 text-center text-[12.5px] text-text-muted">
+            Estamos revisando tu comprobante. Te avisamos cuando se confirme el pago.
+          </div>
+        } @else if (cuota.estado !== EstadoCuota.PAGADA) {
           <div class="mb-3.5 rounded-2xl border border-dashed border-border bg-surface p-4.5 text-center">
             <div class="mb-2.5 flex h-20 items-center justify-center rounded-lg border border-dashed border-border bg-page px-3 text-center text-[10.5px] text-text-muted">
               arrastrá o subí una foto / PDF del comprobante
@@ -45,13 +57,24 @@
         }
       }
 
-      <div class="mb-2 font-display text-xs font-semibold">Historial</div>
+      <div class="mb-2 font-display text-xs font-semibold">Historial de pagos</div>
       <div class="flex flex-col gap-2 text-xs">
-        @for (c of historial(); track c.id) {
-          <div class="flex justify-between">
-            <span>{{ c.fechaVencimiento | date: 'MMMM yyyy' : 'UTC' }}</span>
-            <app-status-badge tone="ok">Pagada</app-status-badge>
+        @for (p of historialPagos(); track p.id) {
+          <div class="flex items-center justify-between">
+            <div>
+              <div class="font-medium">
+                @if (cuotaDePago(p); as c) {
+                  {{ c.fechaVencimiento | date: 'MMMM yyyy' : 'UTC' }}
+                } @else {
+                  Pago #{{ p.id }}
+                }
+              </div>
+              <div class="text-text-muted">{{ etiquetaMetodo(p.metodo) }} · {{ p.fechaPago | date: 'dd/MM/yyyy' : 'UTC' }}</div>
+            </div>
+            <span class="font-semibold">${{ p.montoPagado | number }}</span>
           </div>
+        } @empty {
+          <div class="text-text-muted">Todavía no registraste pagos.</div>
         }
       </div>
     </div>

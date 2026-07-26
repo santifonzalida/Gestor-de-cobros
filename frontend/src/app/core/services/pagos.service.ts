@@ -1,29 +1,40 @@
-import { Injectable, signal } from '@angular/core';
-import { Observable, delay, of } from 'rxjs';
-import { PAGOS_MOCK } from '../mock-data/pagos.mock';
+import { HttpClient } from '@angular/common/http';
+import { Injectable } from '@angular/core';
+import { Observable, forkJoin, map, of } from 'rxjs';
+import { environment } from '../../../environments/environment';
 import { Pago } from '../models/pago.model';
-import { CuotasService } from './cuotas.service';
+
+interface PagoApi {
+  id: number;
+  cuota: { id: number };
+  metodo: Pago['metodo'];
+  montoPagado: number;
+  fechaPago: string;
+  comprobanteUrl?: string;
+}
 
 @Injectable({ providedIn: 'root' })
 export class PagosService {
-  private readonly pagos = signal<Pago[]>([...PAGOS_MOCK]);
-  private nextId = PAGOS_MOCK.length + 1;
+  private readonly baseUrl = `${environment.apiUrl}/pagos`;
 
-  constructor(private cuotasService: CuotasService) {}
+  constructor(private http: HttpClient) {}
 
   listarPorCuotas(cuotaIds: number[]): Observable<Pago[]> {
-    return of(this.pagos().filter((p) => cuotaIds.includes(p.cuotaId))).pipe(delay(100));
+    if (cuotaIds.length === 0) return of([]);
+
+    return forkJoin(
+      cuotaIds.map((cuotaId) => this.http.get<PagoApi[]>(this.baseUrl, { params: { cuotaId } })),
+    ).pipe(map((listas) => listas.flat().map((p) => this.mapear(p))));
   }
 
-  subirComprobante(cuotaId: number, archivo: File, cargadoPor: 'alumno' | 'admin' = 'alumno'): void {
-    const pago: Pago = {
-      id: this.nextId++,
-      cuotaId,
-      comprobanteNombre: archivo.name,
-      fechaCarga: new Date(),
-      cargadoPor,
+  private mapear(p: PagoApi): Pago {
+    return {
+      id: p.id,
+      cuotaId: p.cuota.id,
+      metodo: p.metodo,
+      montoPagado: p.montoPagado,
+      fechaPago: new Date(p.fechaPago),
+      comprobanteUrl: p.comprobanteUrl,
     };
-    this.pagos.update((lista) => [...lista, pago]);
-    this.cuotasService.marcarEnRevision(cuotaId);
   }
 }

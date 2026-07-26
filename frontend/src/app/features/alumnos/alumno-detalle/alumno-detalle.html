@@ -35,16 +35,20 @@
       </div>
 
       <div class="rounded-2xl border border-border bg-surface p-4">
-        <div class="mb-3 font-display text-sm font-semibold">Comprobantes cargados</div>
-        <div class="flex flex-wrap gap-2.5">
+        <div class="mb-3 font-display text-sm font-semibold">Pagos registrados</div>
+        <div class="flex flex-col gap-2.5 text-[12.5px]">
           @for (p of pagos(); track p.id) {
-            <div
-              class="flex h-16 w-16 items-center justify-center rounded-lg border border-dashed border-border bg-page p-2 text-center font-mono text-[10.5px] text-text-muted"
-            >
-              {{ p.comprobanteNombre }}
+            <div class="flex items-center justify-between">
+              <span>
+                @if (cuotaDePago(p); as c) {
+                  {{ c.fechaVencimiento | date: 'MMMM yyyy' : 'UTC' }} —
+                }
+                {{ etiquetaMetodo(p.metodo) }} · {{ p.fechaPago | date: 'dd/MM/yyyy' : 'UTC' }}
+              </span>
+              <span class="font-semibold">${{ p.montoPagado | number }}</span>
             </div>
           } @empty {
-            <div class="text-[12.5px] text-text-muted">Todavía no se cargaron comprobantes.</div>
+            <div class="text-text-muted">Todavía no se registraron pagos.</div>
           }
         </div>
       </div>
