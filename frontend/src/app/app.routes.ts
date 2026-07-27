@@ -12,6 +12,7 @@ import { PortalAlumno } from './features/portal/portal-alumno/portal-alumno';
 import { Login } from './features/auth/login/login';
 import { CompletarRegistro } from './features/auth/completar-registro/completar-registro';
 import { authGuard } from './core/guards/auth.guard';
+import { adminGuard } from './core/guards/admin.guard';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
@@ -20,7 +21,7 @@ export const routes: Routes = [
   {
     path: 'dashboard',
     component: AdminShell,
-    canActivate: [authGuard],
+    canActivate: [adminGuard],
     children: [
       {
         path: '',
@@ -37,7 +38,7 @@ export const routes: Routes = [
   {
     path: 'alumnos',
     component: AdminShell,
-    canActivate: [authGuard],
+    canActivate: [adminGuard],
     children: [
       { path: '', component: AlumnosList },
       { path: ':id', component: AlumnoDetalle },
@@ -46,13 +47,13 @@ export const routes: Routes = [
   {
     path: 'clases',
     component: AdminShell,
-    canActivate: [authGuard],
+    canActivate: [adminGuard],
     children: [{ path: '', component: ClasesList }],
   },
   {
     path: 'cuotas',
     component: AdminShell,
-    canActivate: [authGuard],
+    canActivate: [adminGuard],
     children: [{ path: '', component: CuotasList }],
   },
   { path: 'portal', component: PortalAlumno, canActivate: [authGuard] },

@@ -43,6 +43,10 @@ export class AuthService {
     return this.token() !== null;
   }
 
+  esAlumno(): boolean {
+    return this.usuario()?.roles.some((rol) => rol.name === 'ALUMNO') ?? false;
+  }
+
   private guardarToken(token: string): void {
     localStorage.setItem(TOKEN_KEY, token);
     this.token.set(token);
