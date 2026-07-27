@@ -1,5 +1,6 @@
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { Component, ElementRef, signal, viewChild } from '@angular/core';
+import { Router } from '@angular/router';
 import { AlumnoConEstado } from '../../../core/models/alumno.model';
 import { Cuota, EstadoCuota } from '../../../core/models/cuota.model';
 import { MetodoPago, Pago } from '../../../core/models/pago.model';
@@ -37,6 +38,7 @@ export class PortalAlumno {
     private authService: AuthService,
     private cuotasService: CuotasService,
     private pagosService: PagosService,
+    private router: Router,
   ) {
     this.alumnoId = this.authService.usuario()?.alumnoId ?? null;
     if (this.alumnoId === null) {
@@ -70,6 +72,11 @@ export class PortalAlumno {
 
   protected etiquetaMetodo(metodo: MetodoPago): string {
     return ETIQUETAS_METODO[metodo];
+  }
+
+  protected salir(): void {
+    this.authService.logout();
+    this.router.navigate(['/login']);
   }
 
   protected diasParaVencer(fecha: Date): number {
