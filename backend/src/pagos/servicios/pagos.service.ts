@@ -49,26 +49,35 @@ export class PagosService {
     return guardado;
   }
 
-  async listarTodos(filtros: FiltrarPagosDto, negocioId: number): Promise<Pago[]> {
+  async listarTodos(
+    filtros: FiltrarPagosDto,
+    negocioId: number,
+    alumnoIdSesion?: number | null,
+  ): Promise<Pago[]> {
     const where: FindOptionsWhere<Pago> = { negocio: { id: negocioId } };
     if (filtros.cuotaId) where.cuota = { id: filtros.cuotaId };
     if (filtros.metodo) where.metodo = filtros.metodo;
+    if (alumnoIdSesion != null) {
+      where.cuota = filtros.cuotaId
+        ? { id: filtros.cuotaId, alumno: { id: alumnoIdSesion } }
+        : { alumno: { id: alumnoIdSesion } };
+    }
 
     return this.repo.find({
       where,
-      relations: { cuota: true, registradoPor: true },
+      relations: { cuota: { alumno: true }, registradoPor: true },
       select: { registradoPor: { id: true, email: true } },
       order: { fechaPago: 'DESC' },
     });
   }
 
-  async obtenerPorId(id: number, negocioId: number): Promise<Pago> {
+  async obtenerPorId(id: number, negocioId: number, alumnoIdSesion?: number | null): Promise<Pago> {
     const pago = await this.repo.findOne({
       where: { id, negocio: { id: negocioId } },
-      relations: { cuota: true, registradoPor: true },
+      relations: { cuota: { alumno: true }, registradoPor: true },
       select: { registradoPor: { id: true, email: true } },
     });
-    if (!pago) {
+    if (!pago || (alumnoIdSesion != null && pago.cuota?.alumno?.id !== alumnoIdSesion)) {
       throw new NotFoundException('No se encontró el pago.');
     }
     return pago;

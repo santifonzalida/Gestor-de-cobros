@@ -17,6 +17,7 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { NegocioId } from '../../auth/decorators/negocio-id.decorator';
+import { AlumnoIdSesion } from '../../auth/decorators/alumno-id-sesion.decorator';
 import { AlumnosService } from '../servicios/alumnos.service';
 import { CrearAlumnoDto } from '../dtos/crear-alumno.dto';
 import { ActualizarAlumnoDto } from '../dtos/actualizar-alumno.dto';
@@ -37,15 +38,19 @@ export class AlumnosController {
 
   @Get()
   @ApiOperation({ summary: 'Listar todos los alumnos' })
-  listarTodos(@NegocioId() negocioId: number) {
-    return this.alumnosService.listarTodos(negocioId);
+  listarTodos(@NegocioId() negocioId: number, @AlumnoIdSesion() alumnoIdSesion: number | null) {
+    return this.alumnosService.listarTodos(negocioId, alumnoIdSesion);
   }
 
   @Get(':id')
   @ApiOperation({ summary: 'Obtener un alumno por id' })
   @ApiResponse({ status: 404, description: 'Alumno no encontrado' })
-  obtenerPorId(@Param('id', ParseIntPipe) id: number, @NegocioId() negocioId: number) {
-    return this.alumnosService.obtenerPorId(id, negocioId);
+  obtenerPorId(
+    @Param('id', ParseIntPipe) id: number,
+    @NegocioId() negocioId: number,
+    @AlumnoIdSesion() alumnoIdSesion: number | null,
+  ) {
+    return this.alumnosService.obtenerPorId(id, negocioId, alumnoIdSesion);
   }
 
   @Patch(':id')

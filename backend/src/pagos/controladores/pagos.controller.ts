@@ -14,6 +14,7 @@ import {
 import { AuthGuard } from '@nestjs/passport';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { NegocioId } from '../../auth/decorators/negocio-id.decorator';
+import { AlumnoIdSesion } from '../../auth/decorators/alumno-id-sesion.decorator';
 import { Roles } from '../../auth/decorators/roles.decorator';
 import { RolesGuard } from '../../auth/guards/roles.guard';
 import { ActualizarPagoDto } from '../dtos/actualizar-pago.dto';
@@ -44,15 +45,23 @@ export class PagosController {
 
   @Get()
   @ApiOperation({ summary: 'Listar pagos (filtrable por cuota y método)' })
-  listarTodos(@Query() filtros: FiltrarPagosDto, @NegocioId() negocioId: number) {
-    return this.pagosService.listarTodos(filtros, negocioId);
+  listarTodos(
+    @Query() filtros: FiltrarPagosDto,
+    @NegocioId() negocioId: number,
+    @AlumnoIdSesion() alumnoIdSesion: number | null,
+  ) {
+    return this.pagosService.listarTodos(filtros, negocioId, alumnoIdSesion);
   }
 
   @Get(':id')
   @ApiOperation({ summary: 'Obtener un pago por id' })
   @ApiResponse({ status: 404, description: 'Pago no encontrado' })
-  obtenerPorId(@Param('id', ParseIntPipe) id: number, @NegocioId() negocioId: number) {
-    return this.pagosService.obtenerPorId(id, negocioId);
+  obtenerPorId(
+    @Param('id', ParseIntPipe) id: number,
+    @NegocioId() negocioId: number,
+    @AlumnoIdSesion() alumnoIdSesion: number | null,
+  ) {
+    return this.pagosService.obtenerPorId(id, negocioId, alumnoIdSesion);
   }
 
   @Patch(':id')

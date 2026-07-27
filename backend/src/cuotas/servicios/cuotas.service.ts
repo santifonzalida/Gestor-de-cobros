@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, forwardRef, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { FindOptionsWhere, Repository } from 'typeorm';
 import { AlumnosService } from '../../alumnos/servicios/alumnos.service';
@@ -20,6 +20,7 @@ export class CuotasService {
   constructor(
     @InjectRepository(Cuota)
     private readonly repo: Repository<Cuota>,
+    @Inject(forwardRef(() => AlumnosService))
     private readonly alumnosService: AlumnosService,
     private readonly clasesService: ClasesService,
   ) {}
@@ -92,12 +93,46 @@ export class CuotasService {
     return { creadas, omitidas };
   }
 
-  async listarTodos(filtros: FiltrarCuotasDto, negocioId: number): Promise<Cuota[]> {
+  async obtenerUltimaCuotaDeClase(claseId: number, negocioId: number): Promise<Cuota | undefined> {
+    const cuota = await this.repo.findOne({
+      where: { negocio: { id: negocioId }, alumno: { clase: { id: claseId } } },
+      order: { anio: 'DESC', mes: 'DESC' },
+    });
+    return cuota ?? undefined;
+  }
+
+  /**
+   * Al crear un alumno en una clase que ya tiene una cuota cargada (ej. vía
+   * "crear cuotas por clase"), se le clona la más reciente para que no quede
+   * afuera del cobro del período en curso.
+   */
+  async crearParaNuevoAlumno(alumnoId: number, claseId: number, negocioId: number): Promise<void> {
+    const ultima = await this.obtenerUltimaCuotaDeClase(claseId, negocioId);
+    if (!ultima) return;
+
+    const cuota = this.repo.create({
+      negocio: { id: negocioId },
+      alumno: { id: alumnoId },
+      mes: ultima.mes,
+      anio: ultima.anio,
+      monto: ultima.monto,
+      fechaVencimiento: ultima.fechaVencimiento,
+      estado: EstadoCuota.PENDIENTE,
+    });
+    await this.repo.save(cuota);
+  }
+
+  async listarTodos(
+    filtros: FiltrarCuotasDto,
+    negocioId: number,
+    alumnoIdSesion?: number | null,
+  ): Promise<Cuota[]> {
     const where: FindOptionsWhere<Cuota> = { negocio: { id: negocioId } };
     if (filtros.alumnoId) where.alumno = { id: filtros.alumnoId };
     if (filtros.estado) where.estado = filtros.estado;
     if (filtros.mes) where.mes = filtros.mes;
     if (filtros.anio) where.anio = filtros.anio;
+    if (alumnoIdSesion != null) where.alumno = { id: alumnoIdSesion };
 
     return this.repo.find({
       where,
@@ -106,12 +141,12 @@ export class CuotasService {
     });
   }
 
-  async obtenerPorId(id: number, negocioId: number): Promise<Cuota> {
+  async obtenerPorId(id: number, negocioId: number, alumnoIdSesion?: number | null): Promise<Cuota> {
     const cuota = await this.repo.findOne({
       where: { id, negocio: { id: negocioId } },
       relations: { alumno: true },
     });
-    if (!cuota) {
+    if (!cuota || (alumnoIdSesion != null && cuota.alumno.id !== alumnoIdSesion)) {
       throw new NotFoundException('No se encontró la cuota.');
     }
     return cuota;

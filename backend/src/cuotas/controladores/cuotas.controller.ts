@@ -13,6 +13,7 @@ import {
 import { AuthGuard } from '@nestjs/passport';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { NegocioId } from '../../auth/decorators/negocio-id.decorator';
+import { AlumnoIdSesion } from '../../auth/decorators/alumno-id-sesion.decorator';
 import { Roles } from '../../auth/decorators/roles.decorator';
 import { RolesGuard } from '../../auth/guards/roles.guard';
 import { ActualizarCuotaDto } from '../dtos/actualizar-cuota.dto';
@@ -48,15 +49,23 @@ export class CuotasController {
 
   @Get()
   @ApiOperation({ summary: 'Listar cuotas (filtrable por alumno, estado, mes y año)' })
-  listarTodos(@Query() filtros: FiltrarCuotasDto, @NegocioId() negocioId: number) {
-    return this.cuotasService.listarTodos(filtros, negocioId);
+  listarTodos(
+    @Query() filtros: FiltrarCuotasDto,
+    @NegocioId() negocioId: number,
+    @AlumnoIdSesion() alumnoIdSesion: number | null,
+  ) {
+    return this.cuotasService.listarTodos(filtros, negocioId, alumnoIdSesion);
   }
 
   @Get(':id')
   @ApiOperation({ summary: 'Obtener una cuota por id' })
   @ApiResponse({ status: 404, description: 'Cuota no encontrada' })
-  obtenerPorId(@Param('id', ParseIntPipe) id: number, @NegocioId() negocioId: number) {
-    return this.cuotasService.obtenerPorId(id, negocioId);
+  obtenerPorId(
+    @Param('id', ParseIntPipe) id: number,
+    @NegocioId() negocioId: number,
+    @AlumnoIdSesion() alumnoIdSesion: number | null,
+  ) {
+    return this.cuotasService.obtenerPorId(id, negocioId, alumnoIdSesion);
   }
 
   @Patch(':id')

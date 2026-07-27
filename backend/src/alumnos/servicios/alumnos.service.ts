@@ -1,7 +1,8 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, forwardRef, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ClasesService } from '../../clases/servicios/clases.service';
+import { CuotasService } from '../../cuotas/servicios/cuotas.service';
 import { Alumno } from '../modelo/alumno.entity';
 import { CrearAlumnoDto } from '../dtos/crear-alumno.dto';
 import { ActualizarAlumnoDto } from '../dtos/actualizar-alumno.dto';
@@ -12,6 +13,8 @@ export class AlumnosService {
     @InjectRepository(Alumno)
     private readonly repo: Repository<Alumno>,
     private readonly clasesService: ClasesService,
+    @Inject(forwardRef(() => CuotasService))
+    private readonly cuotasService: CuotasService,
   ) {}
 
   async crear(dto: CrearAlumnoDto, negocioId: number): Promise<Alumno> {
@@ -27,12 +30,21 @@ export class AlumnosService {
       fechaAlta: new Date(),
       activo: true,
     });
-    return this.repo.save(alumno);
+    const guardado = await this.repo.save(alumno);
+
+    if (claseId) {
+      await this.cuotasService.crearParaNuevoAlumno(guardado.id, claseId, negocioId);
+    }
+
+    return guardado;
   }
 
-  async listarTodos(negocioId: number): Promise<Alumno[]> {
+  async listarTodos(negocioId: number, alumnoIdSesion?: number | null): Promise<Alumno[]> {
     return this.repo.find({
-      where: { negocio: { id: negocioId } },
+      where: {
+        negocio: { id: negocioId },
+        ...(alumnoIdSesion != null ? { id: alumnoIdSesion } : {}),
+      },
       relations: { clase: true, usuario: true },
       select: { usuario: { id: true } },
       order: { id: 'ASC' },
@@ -46,13 +58,13 @@ export class AlumnosService {
     });
   }
 
-  async obtenerPorId(id: number, negocioId: number): Promise<Alumno> {
+  async obtenerPorId(id: number, negocioId: number, alumnoIdSesion?: number | null): Promise<Alumno> {
     const alumno = await this.repo.findOne({
       where: { id, negocio: { id: negocioId } },
       relations: { clase: true, usuario: true },
       select: { usuario: { id: true } },
     });
-    if (!alumno) {
+    if (!alumno || (alumnoIdSesion != null && alumno.id !== alumnoIdSesion)) {
       throw new NotFoundException('No se encontró el alumno.');
     }
     return alumno;
