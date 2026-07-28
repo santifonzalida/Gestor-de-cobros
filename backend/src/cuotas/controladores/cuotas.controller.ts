@@ -48,7 +48,7 @@ export class CuotasController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'Listar cuotas (filtrable por alumno, estado, mes y año)' })
+  @ApiOperation({ summary: 'Listar cuotas (filtrable por alumno, clase, estado, mes y año)' })
   listarTodos(
     @Query() filtros: FiltrarCuotasDto,
     @NegocioId() negocioId: number,

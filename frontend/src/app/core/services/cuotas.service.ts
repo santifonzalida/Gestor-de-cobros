@@ -36,6 +36,7 @@ export interface CuotaForm {
 
 export interface FiltrosCuotas {
   alumnoId?: number;
+  claseId?: number;
   estado?: EstadoCuota;
   mes?: number;
   anio?: number;
@@ -80,6 +81,7 @@ export class CuotasService {
   listarTodos(filtros: FiltrosCuotas = {}): Observable<CuotaConAlumno[]> {
     const params: Record<string, string | number> = {};
     if (filtros.alumnoId) params['alumnoId'] = filtros.alumnoId;
+    if (filtros.claseId) params['claseId'] = filtros.claseId;
     if (filtros.estado) params['estado'] = filtros.estado;
     if (filtros.mes) params['mes'] = filtros.mes;
     if (filtros.anio) params['anio'] = filtros.anio;

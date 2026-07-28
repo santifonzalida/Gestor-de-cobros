@@ -129,6 +129,11 @@ export class CuotasService {
   ): Promise<Cuota[]> {
     const where: FindOptionsWhere<Cuota> = { negocio: { id: negocioId } };
     if (filtros.alumnoId) where.alumno = { id: filtros.alumnoId };
+    if (filtros.claseId) {
+      where.alumno = filtros.alumnoId
+        ? { id: filtros.alumnoId, clase: { id: filtros.claseId } }
+        : { clase: { id: filtros.claseId } };
+    }
     if (filtros.estado) where.estado = filtros.estado;
     if (filtros.mes) where.mes = filtros.mes;
     if (filtros.anio) where.anio = filtros.anio;

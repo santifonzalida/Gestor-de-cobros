@@ -10,6 +10,12 @@ export class FiltrarCuotasDto {
   @IsInt()
   alumnoId?: number;
 
+  @ApiPropertyOptional({ description: 'Filtrar por clase (todas las cuotas de los alumnos de esa clase)' })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  claseId?: number;
+
   @ApiPropertyOptional({ enum: EstadoCuota, description: 'Filtrar por estado' })
   @IsOptional()
   @IsEnum(EstadoCuota)

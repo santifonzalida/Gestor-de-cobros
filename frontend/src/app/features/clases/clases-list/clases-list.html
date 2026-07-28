@@ -13,8 +13,10 @@
     <table class="w-full border-collapse text-[12.5px]">
       <thead>
         <tr class="text-left text-text-muted">
-          <th class="px-3.5 py-2.5 font-medium">Ícono</th>
+          <th class="w-8 px-2 py-2.5"></th>
+          <th class="px-1 py-2.5 font-medium">Ícono</th>
           <th class="font-medium">Nombre</th>
+          <th class="px-3.5 py-2.5 font-medium">Cuota actual</th>
           <th class="px-3.5 py-2.5 text-right font-medium">Acciones</th>
         </tr>
       </thead>
@@ -22,8 +24,10 @@
         @if (cargando()) {
           @for (_ of [1, 2, 3]; track $index) {
             <tr class="border-t border-border">
-              <td class="px-3.5 py-2.5"><div class="h-6 w-6 animate-pulse rounded-full bg-border"></div></td>
+              <td class="px-2 py-2.5"></td>
+              <td class="px-1 py-2.5"><div class="h-6 w-6 animate-pulse rounded-full bg-border"></div></td>
               <td><div class="h-3 w-32 animate-pulse rounded bg-border"></div></td>
+              <td class="px-3.5 py-2.5"><div class="h-3 w-28 animate-pulse rounded bg-border"></div></td>
               <td class="px-3.5 py-2.5 text-right">
                 <div class="ml-auto flex w-16 justify-end gap-2">
                   <div class="h-6 w-6 animate-pulse rounded-lg bg-border"></div>
@@ -35,8 +39,39 @@
         } @else {
           @for (c of clases(); track c.id) {
             <tr class="border-t border-border">
-              <td class="px-3.5 py-2.5">{{ c.icono? c.icono : '👀' }}</td>
+              <td class="px-2 py-2.5">
+                @if (historial(c.id).length > 0) {
+                  <button
+                    (click)="toggleExpandir(c.id)"
+                    [attr.aria-label]="expandida() === c.id ? 'Ocultar detalle' : 'Ver detalle'"
+                    class="rounded-lg p-1 text-text-muted transition-colors hover:bg-page"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke-width="2"
+                      stroke="currentColor"
+                      class="size-3.5 transition-transform"
+                      [class.rotate-90]="expandida() === c.id"
+                    >
+                      <path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
+                    </svg>
+                  </button>
+                }
+              </td>
+              <td class="px-1 py-2.5">{{ c.icono? c.icono : '👀' }}</td>
               <td>{{ c.nombre }}</td>
+              <td class="px-3.5 py-2.5">
+                @if (cargandoResumen()) {
+                  <div class="h-3 w-24 animate-pulse rounded bg-border"></div>
+                } @else if (cuotaActual(c.id); as actual) {
+                  <span class="font-medium">{{ fechaPeriodo(actual) | date: 'MMM yyyy' }}</span>
+                  <span class="text-text-muted">· ${{ actual.monto | number }}</span>
+                } @else {
+                  <span class="text-text-muted">Sin cuota definida</span>
+                }
+              </td>
               <td class="px-3.5 py-2.5 text-right">
                 <button
                   (click)="abrirEdicion(c)"
@@ -68,9 +103,36 @@
                 </button>
               </td>
             </tr>
+            @if (expandida() === c.id) {
+              <tr class="border-t border-border bg-page/60">
+                <td colspan="5" class="px-6 py-3.5">
+                  <div class="mb-2 text-[11px] font-semibold text-text-muted">Historial de cuotas de la clase</div>
+                  <div class="flex flex-col gap-1.5">
+                    @for (p of historial(c.id); track p.anio + '-' + p.mes + '-' + p.monto) {
+                      <div class="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[12px]">
+                        <span class="w-24 font-medium capitalize">{{ fechaPeriodo(p) | date: 'MMMM yyyy' }}</span>
+                        <span class="text-text-muted">${{ p.monto | number }}</span>
+                        @if (p.pagadas) {
+                          <span class="text-ok-text">{{ p.pagadas }} pagada{{ p.pagadas === 1 ? '' : 's' }}</span>
+                        }
+                        @if (p.pendientes) {
+                          <span class="text-soon-text">{{ p.pendientes }} pendiente{{ p.pendientes === 1 ? '' : 's' }}</span>
+                        }
+                        @if (p.vencidas) {
+                          <span class="text-debt-text">{{ p.vencidas }} vencida{{ p.vencidas === 1 ? '' : 's' }}</span>
+                        }
+                        @if (p.enRevision) {
+                          <span class="text-soon-text">{{ p.enRevision }} en revisión</span>
+                        }
+                      </div>
+                    }
+                  </div>
+                </td>
+              </tr>
+            }
           } @empty {
             <tr>
-              <td colspan="3" class="px-3.5 py-6 text-center text-text-muted">Todavía no hay clases creadas.</td>
+              <td colspan="5" class="px-3.5 py-6 text-center text-text-muted">Todavía no hay clases creadas.</td>
             </tr>
           }
         }
