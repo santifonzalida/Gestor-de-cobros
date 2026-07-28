@@ -1,9 +1,10 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { Observable, map } from 'rxjs';
+import { Observable, from, map, switchMap } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { EstadoPago } from '../models/alumno.model';
 import { Cuota, EstadoCuota } from '../models/cuota.model';
+import { MetodoPago } from '../models/pago.model';
 
 const DIAS_PROXIMO_VENCIMIENTO = 7;
 
@@ -15,6 +16,12 @@ interface CuotaApi {
   monto: number;
   estado: EstadoCuota;
   fechaVencimiento: string;
+  comprobanteUrl?: string;
+}
+
+export interface AprobarComprobanteForm {
+  metodo: MetodoPago;
+  montoPagado?: number;
 }
 
 interface CuotaApiConAlumno extends CuotaApi {
@@ -58,13 +65,6 @@ export interface ResultadoAltaPorClase {
 @Injectable({ providedIn: 'root' })
 export class CuotasService {
   private readonly baseUrl = `${environment.apiUrl}/cuotas`;
-
-  /**
-   * El flujo de "comprobante en revisión" (subir comprobante → EN_REVISION) no
-   * existe en el backend todavía: se dejó fuera de alcance al construir el CRUD
-   * de Pagos. Se mantiene mockeado en memoria acá para no romper esas pantallas.
-   */
-  private cuotasEnRevision: number[] = [];
 
   constructor(private http: HttpClient) {}
 
@@ -117,20 +117,57 @@ export class CuotasService {
     return dias <= DIAS_PROXIMO_VENCIMIENTO ? 'proximo' : 'al_dia';
   }
 
-  listarEnRevision(): Observable<Cuota[]> {
+  listarEnRevision(): Observable<CuotaConAlumno[]> {
+    return this.listarTodos({ estado: EstadoCuota.EN_REVISION });
+  }
+
+  /**
+   * Orquesta la subida real del comprobante: pide una URL prefirmada, sube el
+   * archivo directo al bucket y confirma. El PUT al bucket usa `fetch()` nativo
+   * en vez de `HttpClient` a propósito: el interceptor de auth le suma el Bearer
+   * de la app a cualquier request de HttpClient sin filtrar por URL, y eso
+   * rompería la firma de la URL prefirmada si viajara en ese PUT.
+   */
+  subirComprobante(cuotaId: number, archivo: File): Observable<Cuota> {
     return this.http
-      .get<CuotaApi[]>(this.baseUrl)
+      .post<{ url: string; key: string }>(`${this.baseUrl}/${cuotaId}/comprobante/solicitar-subida`, {
+        nombreArchivo: archivo.name,
+        contentType: archivo.type,
+      })
       .pipe(
-        map((cuotas) =>
-          cuotas.map((c) => this.mapear(c)).filter((c) => this.cuotasEnRevision.includes(c.id)),
+        switchMap(({ url, key }) =>
+          from(fetch(url, { method: 'PUT', headers: { 'Content-Type': archivo.type }, body: archivo })).pipe(
+            map((respuesta) => {
+              if (!respuesta.ok) throw new Error('No se pudo subir el archivo al almacenamiento.');
+              return key;
+            }),
+          ),
         ),
+        switchMap((key) =>
+          this.http.post<CuotaApi>(`${this.baseUrl}/${cuotaId}/comprobante/confirmar`, { key }),
+        ),
+        map((c) => this.mapear(c)),
       );
   }
 
-  marcarEnRevision(cuotaId: number): void {
-    if (!this.cuotasEnRevision.includes(cuotaId)) {
-      this.cuotasEnRevision = [...this.cuotasEnRevision, cuotaId];
-    }
+  verComprobante(cuotaId: number): Observable<{ url: string }> {
+    return this.http.get<{ url: string }>(`${this.baseUrl}/${cuotaId}/comprobante`);
+  }
+
+  /**
+   * El backend devuelve el `Pago` recién creado (no la `Cuota`) — quien llame
+   * a esto tiene que volver a pedir la cuota/alumno para reflejar el PAGADA.
+   */
+  aprobarComprobante(cuotaId: number, dto: AprobarComprobanteForm): Observable<void> {
+    return this.http
+      .patch(`${this.baseUrl}/${cuotaId}/comprobante/aprobar`, dto)
+      .pipe(map(() => undefined));
+  }
+
+  rechazarComprobante(cuotaId: number): Observable<Cuota> {
+    return this.http
+      .patch<CuotaApi>(`${this.baseUrl}/${cuotaId}/comprobante/rechazar`, {})
+      .pipe(map((c) => this.mapear(c)));
   }
 
   private mapear(c: CuotaApi): Cuota {
@@ -140,8 +177,9 @@ export class CuotasService {
       mes: c.mes,
       anio: c.anio,
       monto: c.monto,
-      estado: this.cuotasEnRevision.includes(c.id) ? EstadoCuota.EN_REVISION : c.estado,
+      estado: c.estado,
       fechaVencimiento: new Date(c.fechaVencimiento),
+      comprobanteUrl: c.comprobanteUrl,
     };
   }
 }

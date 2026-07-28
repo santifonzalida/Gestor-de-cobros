@@ -10,7 +10,8 @@ export class EmailService {
 
   constructor(private config: ConfigService) {
     const host = this.config.get<string>('SMTP_HOST');
-    this.remitente = this.config.get<string>('SMTP_FROM') ?? 'no-reply@gestordecobros.local';
+    this.remitente =
+      this.config.get<string>('SMTP_FROM') ?? 'no-reply@gestordecobros.local';
 
     this.transporter = host
       ? nodemailer.createTransport({
@@ -24,7 +25,11 @@ export class EmailService {
       : null;
   }
 
-  async enviarInvitacionAlumno(destinatario: string, nombreAlumno: string, link: string): Promise<void> {
+  async enviarInvitacionAlumno(
+    destinatario: string,
+    nombreAlumno: string,
+    link: string,
+  ): Promise<void> {
     const asunto = 'Te invitaron a acceder a tu portal de cuotas';
     const html = `
       <p>Hola ${nombreAlumno},</p>

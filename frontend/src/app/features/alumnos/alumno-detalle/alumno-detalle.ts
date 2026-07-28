@@ -1,5 +1,6 @@
 import { DatePipe, DecimalPipe } from '@angular/common';
-import { Component, ElementRef, signal, viewChild } from '@angular/core';
+import { Component, signal } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { AlumnoConEstado } from '../../../core/models/alumno.model';
@@ -18,9 +19,14 @@ const ETIQUETAS_METODO: Record<MetodoPago, string> = {
   MERCADOPAGO: 'Mercado Pago',
 };
 
+interface FormAprobar {
+  metodo: MetodoPago;
+  montoPagado: number;
+}
+
 @Component({
   selector: 'app-alumno-detalle',
-  imports: [AvatarInitials, StatusBadge, DatePipe, DecimalPipe],
+  imports: [AvatarInitials, StatusBadge, DatePipe, DecimalPipe, FormsModule],
   templateUrl: './alumno-detalle.html',
 })
 export class AlumnoDetalle {
@@ -34,7 +40,17 @@ export class AlumnoDetalle {
   protected readonly mensajeInvitacion = signal<string | null>(null);
   protected readonly errorInvitacion = signal<string | null>(null);
 
-  private readonly inputArchivo = viewChild<ElementRef<HTMLInputElement>>('inputArchivo');
+  protected readonly cuotaAAprobar = signal<Cuota | null>(null);
+  protected readonly formAprobar = signal<FormAprobar>({ metodo: 'EFECTIVO', montoPagado: 0 });
+  protected readonly aprobando = signal(false);
+  protected readonly errorAprobar = signal<string | null>(null);
+
+  protected readonly cuotaARechazar = signal<Cuota | null>(null);
+  protected readonly rechazando = signal(false);
+  protected readonly errorRechazar = signal<string | null>(null);
+
+  protected readonly metodosPago: MetodoPago[] = ['EFECTIVO', 'TRANSFERENCIA', 'TARJETA', 'MERCADOPAGO'];
+
   private alumnoId!: number;
 
   constructor(
@@ -116,16 +132,72 @@ export class AlumnoDetalle {
     });
   }
 
-  protected abrirSelectorArchivo(): void {
-    this.inputArchivo()?.nativeElement.click();
+  protected verComprobante(cuota: Cuota): void {
+    this.cuotasService.verComprobante(cuota.id).subscribe((respuesta) => {
+      window.open(respuesta.url, '_blank');
+    });
   }
 
-  protected onArchivoSeleccionado(event: Event): void {
-    const archivo = (event.target as HTMLInputElement).files?.[0];
-    const cuotaActual = this.alumno()?.cuotaActual;
-    if (archivo && cuotaActual) {
-      this.cuotasService.marcarEnRevision(cuotaActual.id);
-      this.cargarDatos();
-    }
+  protected abrirAprobar(cuota: Cuota): void {
+    this.cuotaAAprobar.set(cuota);
+    this.formAprobar.set({ metodo: 'EFECTIVO', montoPagado: cuota.monto });
+    this.errorAprobar.set(null);
+  }
+
+  protected cancelarAprobar(): void {
+    this.cuotaAAprobar.set(null);
+  }
+
+  protected actualizarFormAprobar<K extends keyof FormAprobar>(campo: K, valor: FormAprobar[K]): void {
+    this.formAprobar.update((actual) => ({ ...actual, [campo]: valor }));
+  }
+
+  protected confirmarAprobar(): void {
+    const cuota = this.cuotaAAprobar();
+    if (!cuota) return;
+
+    this.errorAprobar.set(null);
+    this.aprobando.set(true);
+
+    this.cuotasService.aprobarComprobante(cuota.id, this.formAprobar()).subscribe({
+      next: () => {
+        this.aprobando.set(false);
+        this.cuotaAAprobar.set(null);
+        this.cargarDatos();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.aprobando.set(false);
+        this.errorAprobar.set(err.error?.message ?? 'No se pudo aprobar el comprobante.');
+      },
+    });
+  }
+
+  protected abrirRechazar(cuota: Cuota): void {
+    this.cuotaARechazar.set(cuota);
+    this.errorRechazar.set(null);
+  }
+
+  protected cancelarRechazar(): void {
+    this.cuotaARechazar.set(null);
+  }
+
+  protected confirmarRechazar(): void {
+    const cuota = this.cuotaARechazar();
+    if (!cuota) return;
+
+    this.errorRechazar.set(null);
+    this.rechazando.set(true);
+
+    this.cuotasService.rechazarComprobante(cuota.id).subscribe({
+      next: () => {
+        this.rechazando.set(false);
+        this.cuotaARechazar.set(null);
+        this.cargarDatos();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.rechazando.set(false);
+        this.errorRechazar.set(err.error?.message ?? 'No se pudo rechazar el comprobante.');
+      },
+    });
   }
 }

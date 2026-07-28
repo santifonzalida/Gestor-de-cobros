@@ -1,5 +1,6 @@
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { Component, ElementRef, signal, viewChild } from '@angular/core';
+import { HttpErrorResponse } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { AlumnoConEstado } from '../../../core/models/alumno.model';
 import { Cuota, EstadoCuota } from '../../../core/models/cuota.model';
@@ -29,6 +30,9 @@ export class PortalAlumno {
   protected readonly cuotas = signal<Cuota[]>([]);
   protected readonly pagos = signal<Pago[]>([]);
   protected readonly sinAlumnoVinculado = signal(false);
+
+  protected readonly subiendoComprobante = signal(false);
+  protected readonly errorComprobante = signal<string | null>(null);
 
   private readonly inputArchivo = viewChild<ElementRef<HTMLInputElement>>('inputArchivo');
   private alumnoId: number | null;
@@ -88,11 +92,24 @@ export class PortalAlumno {
   }
 
   protected onArchivoSeleccionado(event: Event): void {
-    const archivo = (event.target as HTMLInputElement).files?.[0];
+    const input = event.target as HTMLInputElement;
+    const archivo = input.files?.[0];
     const cuotaActual = this.alumno()?.cuotaActual;
-    if (archivo && cuotaActual) {
-      this.cuotasService.marcarEnRevision(cuotaActual.id);
-      this.cargarDatos();
-    }
+    if (!archivo || !cuotaActual) return;
+
+    this.errorComprobante.set(null);
+    this.subiendoComprobante.set(true);
+
+    this.cuotasService.subirComprobante(cuotaActual.id, archivo).subscribe({
+      next: () => {
+        this.subiendoComprobante.set(false);
+        this.cargarDatos();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.subiendoComprobante.set(false);
+        this.errorComprobante.set(err.error?.message ?? 'No se pudo subir el comprobante. Probá de nuevo.');
+        input.value = '';
+      },
+    });
   }
 }

@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, forwardRef, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { FindOptionsWhere, Repository } from 'typeorm';
 import { CuotasService } from '../../cuotas/servicios/cuotas.service';
@@ -13,6 +13,7 @@ export class PagosService {
   constructor(
     @InjectRepository(Pago)
     private readonly repo: Repository<Pago>,
+    @Inject(forwardRef(() => CuotasService))
     private readonly cuotasService: CuotasService,
   ) {}
 

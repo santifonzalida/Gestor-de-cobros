@@ -13,4 +13,5 @@ export interface Cuota {
   monto: number;
   estado: EstadoCuota;
   fechaVencimiento: Date;
+  comprobanteUrl?: string;
 }
