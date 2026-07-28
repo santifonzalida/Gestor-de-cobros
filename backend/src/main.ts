@@ -8,7 +8,10 @@ const corsLogger = new Logger('CORS');
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  const origenesPermitidos = process.env.CORS_ORIGINS?.split(',') ?? [];
+  const origenesPermitidos =
+    process.env.CORS_ORIGINS?.split(',')
+      .map((origen) => origen.trim())
+      .filter(Boolean) ?? [];
   corsLogger.log(
     `Orígenes permitidos: ${origenesPermitidos.join(', ') || '(ninguno configurado)'}`,
   );
