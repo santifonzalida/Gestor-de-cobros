@@ -12,7 +12,7 @@ Sistema **multi-tenant** de gestión de cobros de cuotas: centraliza distintos n
 - bcrypt para hash de contraseñas
 - `class-validator` + `class-transformer` + `ValidationPipe` global (`whitelist`, `forbidNonWhitelisted`, `transform`) en `main.ts`
 - Swagger (`@nestjs/swagger`) — `SwaggerModule.setup('api', ...)` en `main.ts`, solo activo si `NODE_ENV !== 'production'`
-- CORS habilitado en `main.ts` (`app.enableCors({ origin: process.env.CORS_ORIGINS?.split(',') })`) — lee la whitelist de orígenes desde `.env` (`CORS_ORIGINS`).
+- CORS habilitado en `main.ts` vía función `origin` (no un array estático) — loguea con `Logger('CORS')` la whitelist completa al bootear y, cada vez que rechaza un origen, un `WARN` con qué origen llegó y contra qué lista lo comparó. Se agregó después de perder tiempo debuggeando a ciegas un error de CORS en Railway (el origen real del frontend desplegado no estaba en `CORS_ORIGINS` del backend — la causa más común de este error no es un bug de CORS en sí, sino una URL de entorno mal sincronizada). La whitelist se sigue leyendo de `.env`/variables de entorno (`CORS_ORIGINS`, coma-separado) — **en Railway hay que setearla a mano en las variables del servicio del backend**, el `.env` local nunca se despliega (está en `.gitignore`, correctamente).
 
 **Frontend** (`frontend/`):
 - Angular 22 (standalone components, signals, sin `NgModule`)
