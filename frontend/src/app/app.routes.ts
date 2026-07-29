@@ -3,7 +3,6 @@ import { AdminShell } from './layout/admin-shell/admin-shell';
 import { DashboardShell } from './features/dashboard/dashboard-shell/dashboard-shell';
 import { DashboardResumen } from './features/dashboard/resumen/dashboard-resumen';
 import { DashboardOperativo } from './features/dashboard/operativo/dashboard-operativo';
-import { DashboardClases } from './features/dashboard/clases/dashboard-clases';
 import { AlumnosList } from './features/alumnos/alumnos-list/alumnos-list';
 import { AlumnoDetalle } from './features/alumnos/alumno-detalle/alumno-detalle';
 import { ClasesList } from './features/clases/clases-list/clases-list';
@@ -30,7 +29,6 @@ export const routes: Routes = [
           { path: '', redirectTo: 'resumen', pathMatch: 'full' },
           { path: 'resumen', component: DashboardResumen },
           { path: 'operativo', component: DashboardOperativo },
-          { path: 'clases', component: DashboardClases },
         ],
       },
     ],

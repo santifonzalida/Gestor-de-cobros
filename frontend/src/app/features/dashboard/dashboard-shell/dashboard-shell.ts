@@ -19,12 +19,6 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
           class="rounded-lg border border-border px-3.5 py-1.5 text-xs font-semibold text-text-muted transition-colors hover:bg-page"
           >Operativo</a
         >
-        <a
-          routerLink="clases"
-          routerLinkActive="bg-accent-soft text-accent border-transparent"
-          class="rounded-lg border border-border px-3.5 py-1.5 text-xs font-semibold text-text-muted transition-colors hover:bg-page"
-          >Por clase</a
-        >
       </div>
       <router-outlet />
     </div>

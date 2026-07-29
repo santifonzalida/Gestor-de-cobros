@@ -18,6 +18,7 @@ export class DashboardOperativo {
   protected readonly alumnos = signal<AlumnoConEstado[]>([]);
   protected readonly clases = signal<Clase[]>([]);
   protected readonly claseSeleccionada = signal<number | null>(null);
+  protected readonly cargando = signal(true);
 
   protected readonly alDia = computed(() => this.alumnos().filter((a) => a.estadoPago === 'al_dia').length);
   protected readonly adeudan = computed(() => this.alumnos().filter((a) => a.estadoPago === 'adeuda').length);
@@ -35,7 +36,10 @@ export class DashboardOperativo {
     private clasesService: ClasesService,
     private router: Router,
   ) {
-    this.alumnosService.listar().subscribe((alumnos) => this.alumnos.set(alumnos));
+    this.alumnosService.listar().subscribe((alumnos) => {
+      this.alumnos.set(alumnos);
+      this.cargando.set(false);
+    });
     this.clasesService.listar().subscribe((clases) => this.clases.set(clases));
   }
 
