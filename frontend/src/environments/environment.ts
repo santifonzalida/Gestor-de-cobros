@@ -1,3 +1,3 @@
 export const environment = {
-  apiUrl: 'https://TODO-completar-url-produccion',
+  apiUrl: 'localhost:3000',
 };

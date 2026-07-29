@@ -1,3 +1,3 @@
 export const environment = {
-  apiUrl: 'https://TODO-completar-url-staging',
+  apiUrl: 'https://backend-staging-6e0f.up.railway.app',
 };
