@@ -13,10 +13,13 @@ export class EmailService {
     this.remitente =
       this.config.get<string>('SMTP_FROM') ?? 'no-reply@gestordecobros.local';
 
+    const port = Number(this.config.get<string>('SMTP_PORT') ?? 587);
+
     this.transporter = host
       ? nodemailer.createTransport({
           host,
-          port: Number(this.config.get<string>('SMTP_PORT') ?? 587),
+          port,
+          secure: port === 465, // 465 = TLS implícito; 587/25 usan STARTTLS (secure debe ir en false)
           auth: {
             user: this.config.get<string>('SMTP_USER'),
             pass: this.config.get<string>('SMTP_PASSWORD'),
