@@ -39,6 +39,9 @@ export class Cuota {
   @Column()
   fechaVencimiento: Date;
 
+  @Column({ nullable: true })
+  comprobanteUrl?: string;
+
   @OneToOne(() => Pago, (pago) => pago.cuota)
   @JoinColumn()
   pago: Pago;

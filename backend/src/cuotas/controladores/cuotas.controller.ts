@@ -8,6 +8,7 @@ import {
   Patch,
   Post,
   Query,
+  Req,
   UseGuards,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
@@ -20,6 +21,9 @@ import { ActualizarCuotaDto } from '../dtos/actualizar-cuota.dto';
 import { CrearCuotaDto } from '../dtos/crear-cuota.dto';
 import { CrearCuotaPorClaseDto } from '../dtos/crear-cuota-por-clase.dto';
 import { FiltrarCuotasDto } from '../dtos/filtrar-cuotas.dto';
+import { SolicitarSubidaComprobanteDto } from '../dtos/solicitar-subida-comprobante.dto';
+import { ConfirmarComprobanteDto } from '../dtos/confirmar-comprobante.dto';
+import { AprobarComprobanteDto } from '../dtos/aprobar-comprobante.dto';
 import { CuotasService } from '../servicios/cuotas.service';
 
 @ApiTags('Cuotas')
@@ -66,6 +70,59 @@ export class CuotasController {
     @AlumnoIdSesion() alumnoIdSesion: number | null,
   ) {
     return this.cuotasService.obtenerPorId(id, negocioId, alumnoIdSesion);
+  }
+
+  @Post(':id/comprobante/solicitar-subida')
+  @ApiOperation({ summary: 'Pedir una URL prefirmada para subir el comprobante de una cuota' })
+  solicitarSubidaComprobante(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: SolicitarSubidaComprobanteDto,
+    @NegocioId() negocioId: number,
+    @AlumnoIdSesion() alumnoIdSesion: number | null,
+  ) {
+    return this.cuotasService.solicitarSubidaComprobante(id, dto, negocioId, alumnoIdSesion);
+  }
+
+  @Post(':id/comprobante/confirmar')
+  @ApiOperation({ summary: 'Confirmar que el comprobante ya se subió al bucket (pasa la cuota a EN_REVISION)' })
+  confirmarComprobante(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: ConfirmarComprobanteDto,
+    @NegocioId() negocioId: number,
+    @AlumnoIdSesion() alumnoIdSesion: number | null,
+  ) {
+    return this.cuotasService.confirmarComprobante(id, dto, negocioId, alumnoIdSesion);
+  }
+
+  @Get(':id/comprobante')
+  @ApiOperation({ summary: 'Obtener una URL prefirmada para ver el comprobante de una cuota' })
+  obtenerUrlComprobante(
+    @Param('id', ParseIntPipe) id: number,
+    @NegocioId() negocioId: number,
+    @AlumnoIdSesion() alumnoIdSesion: number | null,
+  ) {
+    return this.cuotasService.obtenerUrlComprobante(id, negocioId, alumnoIdSesion);
+  }
+
+  @Patch(':id/comprobante/aprobar')
+  @UseGuards(RolesGuard)
+  @Roles('ADMIN')
+  @ApiOperation({ summary: 'Aprobar el comprobante en revisión (registra el pago y marca la cuota como PAGADA)' })
+  aprobarComprobante(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: AprobarComprobanteDto,
+    @NegocioId() negocioId: number,
+    @Req() request: { user: { sub: number } },
+  ) {
+    return this.cuotasService.aprobarComprobante(id, dto, negocioId, request.user.sub);
+  }
+
+  @Patch(':id/comprobante/rechazar')
+  @UseGuards(RolesGuard)
+  @Roles('ADMIN')
+  @ApiOperation({ summary: 'Rechazar el comprobante en revisión (vuelve la cuota a PENDIENTE)' })
+  rechazarComprobante(@Param('id', ParseIntPipe) id: number, @NegocioId() negocioId: number) {
+    return this.cuotasService.rechazarComprobante(id, negocioId);
   }
 
   @Patch(':id')

@@ -56,6 +56,12 @@ export class AlumnosService {
     return this.http.post<{ message: string }>(`${environment.apiUrl}/auth/invitar-alumno`, { alumnoId });
   }
 
+  cambiarEstado(id: number, activo: boolean): Observable<AlumnoConEstado> {
+    return this.http
+      .patch<AlumnoApi>(`${this.baseUrl}/${id}`, { activo })
+      .pipe(switchMap((alumno) => this.componerConEstado([alumno]).pipe(map((lista) => lista[0]))));
+  }
+
   private componerConEstado(alumnos: AlumnoApi[]): Observable<AlumnoConEstado[]> {
     if (alumnos.length === 0) return of([]);
 

@@ -69,11 +69,15 @@
               <div class="mb-2.5 flex h-20 items-center justify-center rounded-lg border border-dashed border-border bg-page px-3 text-center text-[10.5px] text-text-muted">
                 arrastrá o subí una foto / PDF del comprobante
               </div>
+              @if (errorComprobante(); as err) {
+                <p class="mb-2.5 text-[11px] font-medium text-debt-text">{{ err }}</p>
+              }
               <button
                 (click)="abrirSelectorArchivo()"
-                class="w-full rounded-lg bg-accent py-2.5 text-sm font-semibold text-white transition-colors hover:bg-accent-hover"
+                [disabled]="subiendoComprobante()"
+                class="w-full rounded-lg bg-accent py-2.5 text-sm font-semibold text-white transition-colors hover:bg-accent-hover disabled:opacity-60"
               >
-                Subir comprobante
+                {{ subiendoComprobante() ? 'Subiendo…' : 'Subir comprobante' }}
               </button>
               <input #inputArchivo type="file" accept="image/*,.pdf" class="hidden" (change)="onArchivoSeleccionado($event)" />
             </div>

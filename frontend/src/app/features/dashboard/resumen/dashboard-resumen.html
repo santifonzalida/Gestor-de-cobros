@@ -99,7 +99,7 @@
             <div
               class="flex h-8.5 w-8.5 shrink-0 items-center justify-center rounded-lg border border-dashed border-border bg-page text-center font-mono text-[10px] text-text-muted"
             >
-              {{ c.archivo.split('.').pop() }}
+              {{ (c.archivo ?? '').split('.').pop() }}
             </div>
             <div class="flex-1 text-sm">{{ c.alumno.nombre }} {{ c.alumno.apellido }}</div>
             <button

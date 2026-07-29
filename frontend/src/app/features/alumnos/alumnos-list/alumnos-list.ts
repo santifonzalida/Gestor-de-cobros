@@ -1,6 +1,7 @@
 import { DatePipe } from '@angular/common';
 import { Component, computed, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { HttpErrorResponse } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { AlumnoConEstado, EstadoPago } from '../../../core/models/alumno.model';
 import { Clase } from '../../../core/models/clase.model';
@@ -9,7 +10,7 @@ import { ClasesService } from '../../../core/services/clases.service';
 import { AvatarInitials } from '../../../shared/ui/avatar-initials/avatar-initials';
 import { StatusBadge } from '../../../shared/ui/status-badge/status-badge';
 
-type Tab = 'todos' | 'al_dia' | 'adeuda';
+type Tab = 'todos' | 'al_dia' | 'adeuda' | 'inactivos';
 
 interface NuevoAlumnoForm {
   nombre: string;
@@ -38,19 +39,31 @@ export class AlumnosList {
   protected readonly error = signal<string | null>(null);
   protected readonly form = signal<NuevoAlumnoForm>({ ...FORM_VACIO });
 
-  protected readonly alDiaCount = computed(() => this.alumnos().filter((a) => a.estadoPago === 'al_dia').length);
-  protected readonly adeudanCount = computed(() => this.alumnos().filter((a) => a.estadoPago === 'adeuda').length);
+  protected readonly totalActivos = computed(() => this.alumnos().filter((a) => a.activo).length);
+  protected readonly inactivosCount = computed(() => this.alumnos().filter((a) => !a.activo).length);
+  protected readonly alDiaCount = computed(
+    () => this.alumnos().filter((a) => a.activo && a.estadoPago === 'al_dia').length,
+  );
+  protected readonly adeudanCount = computed(
+    () => this.alumnos().filter((a) => a.activo && a.estadoPago === 'adeuda').length,
+  );
 
   protected readonly alumnosFiltrados = computed(() => {
     const texto = this.busqueda().trim().toLowerCase();
     const tab = this.tab();
     return this.alumnos().filter((a) => {
       const coincideTexto = !texto || `${a.nombre} ${a.apellido}`.toLowerCase().includes(texto);
-      const coincideTab =
-        tab === 'todos' || (tab === 'al_dia' && a.estadoPago === 'al_dia') || (tab === 'adeuda' && a.estadoPago === 'adeuda');
-      return coincideTexto && coincideTab;
+      if (!coincideTexto) return false;
+      if (tab === 'inactivos') return !a.activo;
+      if (!a.activo) return false;
+      return tab === 'todos' || (tab === 'al_dia' && a.estadoPago === 'al_dia') || (tab === 'adeuda' && a.estadoPago === 'adeuda');
     });
   });
+
+  protected readonly alumnoABajar = signal<AlumnoConEstado | null>(null);
+  protected readonly dandoBaja = signal(false);
+  protected readonly errorBaja = signal<string | null>(null);
+  protected readonly reactivandoId = signal<number | null>(null);
 
   constructor(
     private alumnosService: AlumnosService,
@@ -127,5 +140,47 @@ export class AlumnosList {
 
   protected irAlDetalle(alumnoId: number): void {
     this.router.navigate(['/alumnos', alumnoId]);
+  }
+
+  protected pedirBaja(alumno: AlumnoConEstado): void {
+    this.alumnoABajar.set(alumno);
+    this.errorBaja.set(null);
+  }
+
+  protected cancelarBaja(): void {
+    this.alumnoABajar.set(null);
+  }
+
+  protected confirmarBaja(): void {
+    const alumno = this.alumnoABajar();
+    if (!alumno) return;
+
+    this.errorBaja.set(null);
+    this.dandoBaja.set(true);
+
+    this.alumnosService.cambiarEstado(alumno.id, false).subscribe({
+      next: () => {
+        this.dandoBaja.set(false);
+        this.alumnoABajar.set(null);
+        this.cargarAlumnos();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.dandoBaja.set(false);
+        this.errorBaja.set(err.error?.message ?? 'No se pudo dar de baja al alumno.');
+      },
+    });
+  }
+
+  protected reactivar(alumno: AlumnoConEstado): void {
+    this.reactivandoId.set(alumno.id);
+    this.alumnosService.cambiarEstado(alumno.id, true).subscribe({
+      next: () => {
+        this.reactivandoId.set(null);
+        this.cargarAlumnos();
+      },
+      error: () => {
+        this.reactivandoId.set(null);
+      },
+    });
   }
 }

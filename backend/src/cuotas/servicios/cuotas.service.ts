@@ -3,10 +3,16 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { FindOptionsWhere, Repository } from 'typeorm';
 import { AlumnosService } from '../../alumnos/servicios/alumnos.service';
 import { ClasesService } from '../../clases/servicios/clases.service';
+import { ArchivosService } from '../../archivos/servicios/archivos.service';
+import { PagosService } from '../../pagos/servicios/pagos.service';
+import { Pago } from '../../pagos/modelo/pago.entity';
 import { ActualizarCuotaDto } from '../dtos/actualizar-cuota.dto';
 import { CrearCuotaDto } from '../dtos/crear-cuota.dto';
 import { CrearCuotaPorClaseDto } from '../dtos/crear-cuota-por-clase.dto';
 import { FiltrarCuotasDto } from '../dtos/filtrar-cuotas.dto';
+import { SolicitarSubidaComprobanteDto } from '../dtos/solicitar-subida-comprobante.dto';
+import { ConfirmarComprobanteDto } from '../dtos/confirmar-comprobante.dto';
+import { AprobarComprobanteDto } from '../dtos/aprobar-comprobante.dto';
 import { Cuota } from '../modelo/cuota.entity';
 import { EstadoCuota } from '../modelo/estado-cuota.enum';
 
@@ -23,6 +29,9 @@ export class CuotasService {
     @Inject(forwardRef(() => AlumnosService))
     private readonly alumnosService: AlumnosService,
     private readonly clasesService: ClasesService,
+    @Inject(forwardRef(() => PagosService))
+    private readonly pagosService: PagosService,
+    private readonly archivosService: ArchivosService,
   ) {}
 
   private async existeDuplicado(
@@ -184,6 +193,84 @@ export class CuotasService {
     await this.obtenerPorId(id, negocioId);
     await this.repo.delete(id);
     return { message: 'Cuota eliminada exitosamente.' };
+  }
+
+  async solicitarSubidaComprobante(
+    id: number,
+    dto: SolicitarSubidaComprobanteDto,
+    negocioId: number,
+    alumnoIdSesion: number | null,
+  ): Promise<{ url: string; key: string }> {
+    await this.obtenerPorId(id, negocioId, alumnoIdSesion);
+    const key = `comprobantes/${negocioId}/${id}/${Date.now()}-${dto.nombreArchivo}`;
+    const url = await this.archivosService.generarUrlSubida(key, dto.contentType);
+    return { url, key };
+  }
+
+  async confirmarComprobante(
+    id: number,
+    dto: ConfirmarComprobanteDto,
+    negocioId: number,
+    alumnoIdSesion: number | null,
+  ): Promise<Cuota> {
+    const cuota = await this.obtenerPorId(id, negocioId, alumnoIdSesion);
+    const existe = await this.archivosService.existe(dto.key);
+    if (!existe) {
+      throw new BadRequestException('El archivo todavía no llegó al almacenamiento. Probá de nuevo.');
+    }
+    cuota.comprobanteUrl = dto.key;
+    cuota.estado = EstadoCuota.EN_REVISION;
+    return this.repo.save(cuota);
+  }
+
+  async obtenerUrlComprobante(
+    id: number,
+    negocioId: number,
+    alumnoIdSesion: number | null,
+  ): Promise<{ url: string }> {
+    const cuota = await this.obtenerPorId(id, negocioId, alumnoIdSesion);
+    if (!cuota.comprobanteUrl) {
+      throw new NotFoundException('Esta cuota no tiene ningún comprobante cargado.');
+    }
+    const url = await this.archivosService.generarUrlDescarga(cuota.comprobanteUrl);
+    return { url };
+  }
+
+  async aprobarComprobante(
+    id: number,
+    dto: AprobarComprobanteDto,
+    negocioId: number,
+    adminId?: number,
+  ): Promise<Pago> {
+    const cuota = await this.obtenerPorId(id, negocioId);
+    if (cuota.estado !== EstadoCuota.EN_REVISION || !cuota.comprobanteUrl) {
+      throw new BadRequestException('Esta cuota no tiene ningún comprobante en revisión.');
+    }
+    return this.pagosService.crear(
+      {
+        cuotaId: id,
+        metodo: dto.metodo,
+        montoPagado: dto.montoPagado ?? cuota.monto,
+        fechaPago: new Date().toISOString(),
+        comprobanteUrl: cuota.comprobanteUrl,
+      },
+      negocioId,
+      adminId,
+    );
+  }
+
+  async rechazarComprobante(id: number, negocioId: number): Promise<Cuota> {
+    const cuota = await this.obtenerPorId(id, negocioId);
+    if (cuota.estado !== EstadoCuota.EN_REVISION) {
+      throw new BadRequestException('Esta cuota no tiene ningún comprobante en revisión.');
+    }
+    await this.repo
+      .createQueryBuilder()
+      .update(Cuota)
+      .set({ comprobanteUrl: null, estado: EstadoCuota.PENDIENTE })
+      .where('id = :id', { id })
+      .execute();
+    return this.obtenerPorId(id, negocioId);
   }
 
   /**

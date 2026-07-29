@@ -11,7 +11,7 @@ import { AvatarInitials } from '../../../shared/ui/avatar-initials/avatar-initia
 
 interface ComprobantePendiente {
   alumno: AlumnoConEstado;
-  archivo: string;
+  archivo?: string;
 }
 
 @Component({
@@ -56,7 +56,7 @@ export class DashboardResumen {
         this.comprobantesPendientes.set(
           cuotas.map((c) => ({
             alumno: alumnos.find((a) => a.id === c.alumnoId)!,
-            archivo: `comprobante_${alumnos.find((a) => a.id === c.alumnoId)?.nombre.toLowerCase()}.jpg`,
+            archivo: c.comprobanteUrl,
           })),
         );
         this.cargando.set(false);
