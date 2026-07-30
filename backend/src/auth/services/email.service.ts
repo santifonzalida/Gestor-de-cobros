@@ -1,90 +1,29 @@
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import * as nodemailer from 'nodemailer';
-import { createConnection } from 'net';
+
+const BREVO_API_URL = 'https://api.brevo.com/v3/smtp/email';
+const NOMBRE_REMITENTE = 'Gestor de Cobros';
 
 @Injectable()
-export class EmailService implements OnModuleInit {
+export class EmailService {
   private readonly logger = new Logger(EmailService.name);
-  private readonly transporter: nodemailer.Transporter | null;
+  private readonly apiKey?: string;
   private readonly remitente: string;
-  private readonly host?: string;
-  private readonly port: number;
 
   constructor(private config: ConfigService) {
-    this.host = this.config.get<string>('SMTP_HOST');
+    this.apiKey = this.config.get<string>('BREVO_API_KEY');
     this.remitente =
       this.config.get<string>('SMTP_FROM') ?? 'no-reply@gestordecobros.local';
 
-    this.port = Number(this.config.get<string>('SMTP_PORT') ?? 587);
-
-    this.transporter = this.host
-      ? nodemailer.createTransport({
-          host: this.host,
-          port: this.port,
-          secure: false, // 465 = TLS implícito; 587/25 usan STARTTLS (secure debe ir en false)
-          auth: {
-            user: this.config.get<string>('SMTP_USER'),
-            pass: this.config.get<string>('SMTP_PASSWORD'),
-          },
-          logger: true, // loguea el diálogo SMTP completo (EHLO/STARTTLS/AUTH) por consola
-        })
-      : null;
-
-    if (this.host) {
+    if (this.apiKey) {
       this.logger.log(
-        `Transporter SMTP configurado: host=${this.host} port=${this.port} user=${this.config.get<string>('SMTP_USER') ?? '(sin usuario)'}`,
+        'API de Brevo configurada para el envío de invitaciones.',
       );
     } else {
       this.logger.warn(
-        'SMTP_HOST no configurado — las invitaciones se van a loguear por consola en vez de enviarse.',
+        'BREVO_API_KEY no configurada — las invitaciones se van a loguear por consola en vez de enviarse.',
       );
     }
-  }
-
-  /**
-   * Diagnóstico TEMPORAL para el timeout de conexión SMTP en Railway — probar
-   * si el bloqueo es específico de Brevo o general del puerto/proveedor.
-   * Sacar este método (y la llamada en onModuleInit) una vez resuelto.
-   */
-  private probarConectividad(host: string, port: number): Promise<string> {
-    return new Promise((resolve) => {
-      const inicio = Date.now();
-      const socket = createConnection({ host, port });
-      const timeout = setTimeout(() => {
-        socket.destroy();
-        resolve(`${host}:${port} → TIMEOUT tras ${Date.now() - inicio}ms`);
-      }, 8000);
-
-      socket.once('connect', () => {
-        clearTimeout(timeout);
-        socket.end();
-        resolve(`${host}:${port} → CONECTÓ OK en ${Date.now() - inicio}ms`);
-      });
-
-      socket.once('error', (err) => {
-        clearTimeout(timeout);
-        resolve(
-          `${host}:${port} → ERROR (${err.message}) tras ${Date.now() - inicio}ms`,
-        );
-      });
-    });
-  }
-
-  async onModuleInit(): Promise<void> {
-    if (!this.host) return;
-
-    const [resultado587, resultado465, resultadoControl] = await Promise.all([
-      this.probarConectividad(this.host, 587),
-      this.probarConectividad(this.host, 465),
-      this.probarConectividad('smtp.gmail.com', 587),
-    ]);
-
-    this.logger.warn(`[DIAGNÓSTICO CONECTIVIDAD] Brevo:587: ${resultado587}`);
-    this.logger.warn(`[DIAGNÓSTICO CONECTIVIDAD] Brevo:465: ${resultado465}`);
-    this.logger.warn(
-      `[DIAGNÓSTICO CONECTIVIDAD] Control (Gmail:587): ${resultadoControl}`,
-    );
   }
 
   async enviarInvitacionAlumno(
@@ -100,40 +39,55 @@ export class EmailService implements OnModuleInit {
       <p>Este link vence en 48 horas.</p>
     `;
 
-    if (!this.transporter) {
+    if (!this.apiKey) {
       this.logger.warn(
-        `SMTP no configurado — mostrando la invitación por consola en vez de enviarla.\nDestinatario: ${destinatario}\nLink: ${link}`,
+        `Brevo no configurado — mostrando la invitación por consola en vez de enviarla.\nDestinatario: ${destinatario}\nLink: ${link}`,
       );
       return;
     }
 
     this.logger.log(
-      `Intentando enviar invitación a "${destinatario}" vía ${this.host}:${this.port}...`,
+      `Enviando invitación a "${destinatario}" vía API de Brevo...`,
     );
 
+    let respuesta: Response;
     try {
-      const info = await this.transporter.sendMail({
-        from: this.remitente,
-        to: destinatario,
-        subject: asunto,
-        html,
+      respuesta = await fetch(BREVO_API_URL, {
+        method: 'POST',
+        headers: {
+          'api-key': this.apiKey,
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+        },
+        body: JSON.stringify({
+          sender: { email: this.remitente, name: NOMBRE_REMITENTE },
+          to: [{ email: destinatario }],
+          subject: asunto,
+          htmlContent: html,
+        }),
       });
-      this.logger.log(
-        `Invitación enviada a "${destinatario}" — messageId=${info.messageId} response="${info.response}"`,
-      );
     } catch (error) {
-      const err = error as Error & {
-        code?: string;
-        command?: string;
-        response?: string;
-        responseCode?: number;
-      };
+      const err = error as Error;
       this.logger.error(
-        `Falló el envío a "${destinatario}" vía ${this.host}:${this.port} — ` +
-          `code=${err.code ?? '?'} command=${err.command ?? '?'} responseCode=${err.responseCode ?? '?'} response="${err.response ?? '?'}"`,
+        `Falló la conexión con la API de Brevo para "${destinatario}": ${err.message}`,
         err.stack,
       );
-      throw error;
+      throw new Error('No se pudo conectar con el servicio de email.');
     }
+
+    if (!respuesta.ok) {
+      const cuerpo = await respuesta.text();
+      this.logger.error(
+        `Brevo rechazó el envío a "${destinatario}" — status=${respuesta.status} body=${cuerpo}`,
+      );
+      throw new Error(
+        `No se pudo enviar el email de invitación (Brevo respondió ${respuesta.status}).`,
+      );
+    }
+
+    const data = (await respuesta.json()) as { messageId?: string };
+    this.logger.log(
+      `Invitación enviada a "${destinatario}" — messageId=${data.messageId ?? '?'}`,
+    );
   }
 }
