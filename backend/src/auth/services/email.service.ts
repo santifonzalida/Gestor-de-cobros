@@ -19,13 +19,17 @@ export class EmailService {
       ? nodemailer.createTransport({
           host,
           port,
-          secure: port === 465, // 465 = TLS implícito; 587/25 usan STARTTLS (secure debe ir en false)
+          secure: false, // 465 = TLS implícito; 587/25 usan STARTTLS (secure debe ir en false)
           auth: {
             user: this.config.get<string>('SMTP_USER'),
             pass: this.config.get<string>('SMTP_PASSWORD'),
           },
         })
       : null;
+
+    console.log(
+      `EmailService initialized. SMTP host: ${host}, port: ${port}, from: ${this.remitente}, user: ${this.config.get<string>('SMTP_USER')}, password: ${this.config.get<string>('SMTP_PASSWORD')}`,
+    );
   }
 
   async enviarInvitacionAlumno(
