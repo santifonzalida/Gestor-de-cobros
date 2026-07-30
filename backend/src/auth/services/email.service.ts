@@ -1,9 +1,10 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as nodemailer from 'nodemailer';
+import { createConnection } from 'net';
 
 @Injectable()
-export class EmailService {
+export class EmailService implements OnModuleInit {
   private readonly logger = new Logger(EmailService.name);
   private readonly transporter: nodemailer.Transporter | null;
   private readonly remitente: string;
@@ -39,6 +40,49 @@ export class EmailService {
         'SMTP_HOST no configurado — las invitaciones se van a loguear por consola en vez de enviarse.',
       );
     }
+  }
+
+  /**
+   * Diagnóstico TEMPORAL para el timeout de conexión SMTP en Railway — probar
+   * si el bloqueo es específico de Brevo o general del puerto/proveedor.
+   * Sacar este método (y la llamada en onModuleInit) una vez resuelto.
+   */
+  private probarConectividad(host: string, port: number): Promise<string> {
+    return new Promise((resolve) => {
+      const inicio = Date.now();
+      const socket = createConnection({ host, port });
+      const timeout = setTimeout(() => {
+        socket.destroy();
+        resolve(`${host}:${port} → TIMEOUT tras ${Date.now() - inicio}ms`);
+      }, 8000);
+
+      socket.once('connect', () => {
+        clearTimeout(timeout);
+        socket.end();
+        resolve(`${host}:${port} → CONECTÓ OK en ${Date.now() - inicio}ms`);
+      });
+
+      socket.once('error', (err) => {
+        clearTimeout(timeout);
+        resolve(
+          `${host}:${port} → ERROR (${err.message}) tras ${Date.now() - inicio}ms`,
+        );
+      });
+    });
+  }
+
+  async onModuleInit(): Promise<void> {
+    if (!this.host) return;
+
+    const [resultadoBrevo, resultadoControl] = await Promise.all([
+      this.probarConectividad(this.host, this.port),
+      this.probarConectividad('smtp.gmail.com', 587),
+    ]);
+
+    this.logger.warn(`[DIAGNÓSTICO CONECTIVIDAD] Brevo: ${resultadoBrevo}`);
+    this.logger.warn(
+      `[DIAGNÓSTICO CONECTIVIDAD] Control (Gmail): ${resultadoControl}`,
+    );
   }
 
   async enviarInvitacionAlumno(
