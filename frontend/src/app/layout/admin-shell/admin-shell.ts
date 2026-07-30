@@ -22,6 +22,7 @@ export class AdminShell {
     { label: 'Clases', icon: '🥋', route: '/clases' },
     { label: 'Cuotas', icon: '💳', route: '/cuotas' },
     { label: 'Comprobantes', icon: '📎', route: null },
+    { label: 'Configuración', icon: '⚙️', route: '/configuracion' },
   ];
 
   protected readonly usuario;

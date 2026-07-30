@@ -16,4 +16,7 @@ export class Negocio {
 
   @Column({ nullable: true })
   fechaAlta: Date;
+
+  @Column({ nullable: true })
+  logoUrl?: string;
 }

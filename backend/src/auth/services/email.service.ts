@@ -30,9 +30,14 @@ export class EmailService {
     destinatario: string,
     nombreAlumno: string,
     link: string,
+    logoUrl?: string,
   ): Promise<void> {
     const asunto = 'Te invitaron a acceder a tu portal de cuotas';
+    const logoHtml = logoUrl
+      ? `<img src="${logoUrl}" alt="" style="max-height:64px;margin-bottom:12px" />`
+      : '';
     const html = `
+      ${logoHtml}
       <p>Hola ${nombreAlumno},</p>
       <p>Te invitaron a crear tu acceso al portal de cuotas. Hacé click en el siguiente link para definir tu contraseña:</p>
       <p><a href="${link}">${link}</a></p>

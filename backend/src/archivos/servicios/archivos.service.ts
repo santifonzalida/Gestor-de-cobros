@@ -8,6 +8,13 @@ import {
   S3Client,
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import type { Readable } from 'stream';
+
+export interface ObjetoDescargado {
+  body: Readable;
+  contentType?: string;
+  contentLength?: number;
+}
 
 const TTL_SUBIDA_SEGUNDOS = 5 * 60;
 const TTL_DESCARGA_SEGUNDOS = 10 * 60;
@@ -27,8 +34,10 @@ export class ArchivosService {
           endpoint,
           forcePathStyle: true,
           credentials: {
-            accessKeyId: this.config.get<string>('RAILWAY_BUCKET_ACCESS_KEY_ID') ?? '',
-            secretAccessKey: this.config.get<string>('RAILWAY_BUCKET_SECRET_ACCESS_KEY') ?? '',
+            accessKeyId:
+              this.config.get<string>('RAILWAY_BUCKET_ACCESS_KEY_ID') ?? '',
+            secretAccessKey:
+              this.config.get<string>('RAILWAY_BUCKET_SECRET_ACCESS_KEY') ?? '',
           },
         })
       : null;
@@ -45,7 +54,11 @@ export class ArchivosService {
 
   async generarUrlSubida(key: string, contentType: string): Promise<string> {
     const cliente = this.obtenerClienteOFallar();
-    const comando = new PutObjectCommand({ Bucket: this.bucket, Key: key, ContentType: contentType });
+    const comando = new PutObjectCommand({
+      Bucket: this.bucket,
+      Key: key,
+      ContentType: contentType,
+    });
     return getSignedUrl(cliente, comando, { expiresIn: TTL_SUBIDA_SEGUNDOS });
   }
 
@@ -55,10 +68,24 @@ export class ArchivosService {
     return getSignedUrl(cliente, comando, { expiresIn: TTL_DESCARGA_SEGUNDOS });
   }
 
+  async descargarObjeto(key: string): Promise<ObjetoDescargado> {
+    const cliente = this.obtenerClienteOFallar();
+    const respuesta = await cliente.send(
+      new GetObjectCommand({ Bucket: this.bucket, Key: key }),
+    );
+    return {
+      body: respuesta.Body as Readable,
+      contentType: respuesta.ContentType,
+      contentLength: respuesta.ContentLength,
+    };
+  }
+
   async existe(key: string): Promise<boolean> {
     const cliente = this.obtenerClienteOFallar();
     try {
-      await cliente.send(new HeadObjectCommand({ Bucket: this.bucket, Key: key }));
+      await cliente.send(
+        new HeadObjectCommand({ Bucket: this.bucket, Key: key }),
+      );
       return true;
     } catch (error) {
       if (error instanceof NotFound) return false;

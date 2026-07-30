@@ -11,6 +11,7 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { UsuarioService } from '../../usuarios/servicios/usuarios.service';
 import { AlumnosService } from '../../alumnos/servicios/alumnos.service';
+import { NegociosService } from '../../negocios/servicios/negocios.service';
 import { RegistrarUsuarioDto } from '../dtos/registrarUsuarioDto';
 import { Usuario } from '../../usuarios/modelo/usuario.entity';
 import { EmailService } from './email.service';
@@ -26,6 +27,7 @@ export class AuthService {
   constructor(
     private usersService: UsuarioService,
     private alumnosService: AlumnosService,
+    private negociosService: NegociosService,
     private emailService: EmailService,
     private jwtService: JwtService,
     private config: ConfigService,
@@ -47,13 +49,18 @@ export class AuthService {
     return user;
   }
 
-  async generarInvitacion(alumnoId: number, negocioId: number): Promise<{ message: string }> {
+  async generarInvitacion(
+    alumnoId: number,
+    negocioId: number,
+  ): Promise<{ message: string }> {
     const alumno = await this.alumnosService.obtenerPorId(alumnoId, negocioId);
     if (!alumno.email) {
       throw new BadRequestException('El alumno no tiene un email cargado.');
     }
     if (alumno.usuario) {
-      throw new BadRequestException('Este alumno ya tiene un usuario vinculado.');
+      throw new BadRequestException(
+        'Este alumno ya tiene un usuario vinculado.',
+      );
     }
 
     const payload: PayloadInvitacionAlumno = {
@@ -65,34 +72,59 @@ export class AuthService {
     const frontendUrl = this.config.get<string>('FRONTEND_URL');
     const link = `${frontendUrl}/completar-registro?token=${token}`;
 
-    await this.emailService.enviarInvitacionAlumno(alumno.email, alumno.nombre, link);
+    const { logoUrl } =
+      await this.negociosService.obtenerActualConLogo(negocioId);
+    await this.emailService.enviarInvitacionAlumno(
+      alumno.email,
+      alumno.nombre,
+      link,
+      logoUrl ?? undefined,
+    );
     return { message: 'Invitación enviada.' };
   }
 
-  async completarInvitacion(token: string, password: string): Promise<{ message: string }> {
+  async completarInvitacion(
+    token: string,
+    password: string,
+  ): Promise<{ message: string }> {
     let payload: PayloadInvitacionAlumno;
     try {
       payload = this.jwtService.verify<PayloadInvitacionAlumno>(token);
     } catch {
-      throw new BadRequestException('El link de invitación no es válido o venció.');
+      throw new BadRequestException(
+        'El link de invitación no es válido o venció.',
+      );
     }
     if (payload.tipo !== 'invitacion_alumno') {
       throw new BadRequestException('El link de invitación no es válido.');
     }
 
-    const alumno = await this.alumnosService.obtenerPorId(payload.alumnoId, payload.negocioId);
+    const alumno = await this.alumnosService.obtenerPorId(
+      payload.alumnoId,
+      payload.negocioId,
+    );
     if (alumno.usuario) {
-      throw new BadRequestException('Este alumno ya tiene un usuario vinculado.');
+      throw new BadRequestException(
+        'Este alumno ya tiene un usuario vinculado.',
+      );
     }
 
     const role = await this.usersService.findByName('ALUMNO');
     if (!role) throw new BadRequestException(`El rol 'ALUMNO' no existe.`);
 
-    const user = await this.usersService.create(alumno.email, password, payload.negocioId);
+    const user = await this.usersService.create(
+      alumno.email,
+      password,
+      payload.negocioId,
+    );
     user.roles = [role];
     await this.usersService.save(user);
 
-    await this.alumnosService.vincularUsuario(alumno.id, user.id, payload.negocioId);
+    await this.alumnosService.vincularUsuario(
+      alumno.id,
+      user.id,
+      payload.negocioId,
+    );
     return { message: 'Cuenta creada exitosamente.' };
   }
 
@@ -109,7 +141,9 @@ export class AuthService {
 
   async login(user: Usuario) {
     if (!user.negocio) {
-      throw new UnauthorizedException('El usuario no tiene un negocio asignado.');
+      throw new UnauthorizedException(
+        'El usuario no tiene un negocio asignado.',
+      );
     }
 
     await this.usersService.updateLastLogin(user.id);

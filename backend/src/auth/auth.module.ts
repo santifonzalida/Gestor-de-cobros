@@ -9,11 +9,13 @@ import { LocalStrategy } from './strategies/local.strategy';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { UsuariosModule } from '../usuarios/usuarios.module';
 import { AlumnosModule } from '../alumnos/alumnos.module';
+import { NegociosModule } from '../negocios/negocios.module';
 
 @Module({
   imports: [
     UsuariosModule,
     AlumnosModule,
+    NegociosModule,
     PassportModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],

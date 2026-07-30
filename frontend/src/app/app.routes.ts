@@ -7,6 +7,7 @@ import { AlumnosList } from './features/alumnos/alumnos-list/alumnos-list';
 import { AlumnoDetalle } from './features/alumnos/alumno-detalle/alumno-detalle';
 import { ClasesList } from './features/clases/clases-list/clases-list';
 import { CuotasList } from './features/cuotas/cuotas-list/cuotas-list';
+import { Configuracion } from './features/configuracion/configuracion';
 import { PortalAlumno } from './features/portal/portal-alumno/portal-alumno';
 import { Login } from './features/auth/login/login';
 import { CompletarRegistro } from './features/auth/completar-registro/completar-registro';
@@ -53,6 +54,12 @@ export const routes: Routes = [
     component: AdminShell,
     canActivate: [adminGuard],
     children: [{ path: '', component: CuotasList }],
+  },
+  {
+    path: 'configuracion',
+    component: AdminShell,
+    canActivate: [adminGuard],
+    children: [{ path: '', component: Configuracion }],
   },
   { path: 'portal', component: PortalAlumno, canActivate: [authGuard] },
   { path: '**', redirectTo: 'dashboard' },

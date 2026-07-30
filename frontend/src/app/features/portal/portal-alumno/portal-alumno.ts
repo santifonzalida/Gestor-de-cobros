@@ -8,6 +8,7 @@ import { MetodoPago, Pago } from '../../../core/models/pago.model';
 import { AlumnosService } from '../../../core/services/alumnos.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { CuotasService } from '../../../core/services/cuotas.service';
+import { NegociosService } from '../../../core/services/negocios.service';
 import { PagosService } from '../../../core/services/pagos.service';
 import { StatusBadge } from '../../../shared/ui/status-badge/status-badge';
 
@@ -30,6 +31,7 @@ export class PortalAlumno {
   protected readonly cuotas = signal<Cuota[]>([]);
   protected readonly pagos = signal<Pago[]>([]);
   protected readonly sinAlumnoVinculado = signal(false);
+  protected readonly logoUrl = signal<string | null>(null);
 
   protected readonly subiendoComprobante = signal(false);
   protected readonly errorComprobante = signal<string | null>(null);
@@ -41,9 +43,12 @@ export class PortalAlumno {
     private alumnosService: AlumnosService,
     private authService: AuthService,
     private cuotasService: CuotasService,
+    private negociosService: NegociosService,
     private pagosService: PagosService,
     private router: Router,
   ) {
+    this.negociosService.obtenerActual().subscribe((negocio) => this.logoUrl.set(negocio.logoUrl));
+
     this.alumnoId = this.authService.usuario()?.alumnoId ?? null;
     if (this.alumnoId === null) {
       this.sinAlumnoVinculado.set(true);
