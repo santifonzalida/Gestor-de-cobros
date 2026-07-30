@@ -74,14 +74,16 @@ export class EmailService implements OnModuleInit {
   async onModuleInit(): Promise<void> {
     if (!this.host) return;
 
-    const [resultadoBrevo, resultadoControl] = await Promise.all([
-      this.probarConectividad(this.host, this.port),
+    const [resultado587, resultado465, resultadoControl] = await Promise.all([
+      this.probarConectividad(this.host, 587),
+      this.probarConectividad(this.host, 465),
       this.probarConectividad('smtp.gmail.com', 587),
     ]);
 
-    this.logger.warn(`[DIAGNÓSTICO CONECTIVIDAD] Brevo: ${resultadoBrevo}`);
+    this.logger.warn(`[DIAGNÓSTICO CONECTIVIDAD] Brevo:587: ${resultado587}`);
+    this.logger.warn(`[DIAGNÓSTICO CONECTIVIDAD] Brevo:465: ${resultado465}`);
     this.logger.warn(
-      `[DIAGNÓSTICO CONECTIVIDAD] Control (Gmail): ${resultadoControl}`,
+      `[DIAGNÓSTICO CONECTIVIDAD] Control (Gmail:587): ${resultadoControl}`,
     );
   }
 
