@@ -14,6 +14,9 @@ export class Configuracion {
   protected readonly eliminando = signal(false);
   protected readonly error = signal<string | null>(null);
 
+  protected readonly archivoPendiente = signal<File | null>(null);
+  protected readonly previewUrl = signal<string | null>(null);
+
   private readonly inputArchivo = viewChild<ElementRef<HTMLInputElement>>('inputArchivo');
 
   constructor(private negociosService: NegociosService) {
@@ -37,25 +40,43 @@ export class Configuracion {
     if (!archivo) return;
 
     this.error.set(null);
+    this.liberarPreview();
+    this.archivoPendiente.set(archivo);
+    this.previewUrl.set(URL.createObjectURL(archivo));
+    input.value = '';
+  }
+
+  protected guardarCambios(): void {
+    const archivo = this.archivoPendiente();
+    if (!archivo) return;
+
+    this.error.set(null);
     this.subiendo.set(true);
 
     this.negociosService.subirLogo(archivo).subscribe({
       next: (negocio) => {
         this.subiendo.set(false);
         this.negocio.set(negocio);
+        this.descartarPendiente();
       },
       error: (err: HttpErrorResponse) => {
         this.subiendo.set(false);
-        this.error.set(err.error?.message ?? 'No se pudo subir el logo. Probá de nuevo.');
-        input.value = '';
+        this.error.set(err.error?.message ?? 'No se pudo guardar el logo. Probá de nuevo.');
       },
     });
   }
 
-  protected eliminarLogo(): void {
+  protected quitarImagen(): void {
     this.error.set(null);
-    this.eliminando.set(true);
 
+    // Si todavía no se guardó (es solo una vista previa local), cancelar es
+    // gratis: no hay nada que borrar del lado del servidor.
+    if (this.archivoPendiente()) {
+      this.descartarPendiente();
+      return;
+    }
+
+    this.eliminando.set(true);
     this.negociosService.eliminarLogo().subscribe({
       next: (negocio) => {
         this.eliminando.set(false);
@@ -66,5 +87,16 @@ export class Configuracion {
         this.error.set(err.error?.message ?? 'No se pudo quitar el logo.');
       },
     });
+  }
+
+  private descartarPendiente(): void {
+    this.liberarPreview();
+    this.archivoPendiente.set(null);
+    this.previewUrl.set(null);
+  }
+
+  private liberarPreview(): void {
+    const url = this.previewUrl();
+    if (url) URL.revokeObjectURL(url);
   }
 }

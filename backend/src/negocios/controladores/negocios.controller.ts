@@ -88,7 +88,11 @@ export class NegociosController {
       await this.negociosService.descargarLogo(id);
     res.set({
       'Content-Type': contentType ?? 'application/octet-stream',
-      'Cache-Control': 'public, max-age=3600',
+      // La URL es siempre la misma para un negocio (a propósito, para que el
+      // link del mail no venza), pero el archivo detrás puede cambiar cuando
+      // el admin sube uno nuevo o lo borra — "no-cache" obliga a revalidar
+      // en cada request en vez de confiar ciegamente en una copia vieja.
+      'Cache-Control': 'no-cache',
       ...(contentLength ? { 'Content-Length': String(contentLength) } : {}),
     });
     body.pipe(res);
