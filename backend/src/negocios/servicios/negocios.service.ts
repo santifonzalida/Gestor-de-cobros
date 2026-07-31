@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -6,7 +10,10 @@ import {
   ArchivosService,
   ObjetoDescargado,
 } from '../../archivos/servicios/archivos.service';
+import { UsuarioService } from '../../usuarios/servicios/usuarios.service';
+import { Usuario } from '../../usuarios/modelo/usuario.entity';
 import { ConfirmarLogoDto } from '../dtos/confirmar-logo.dto';
+import { CrearAdminDto } from '../dtos/crear-admin.dto';
 import { CrearNegocioDto } from '../dtos/crear-negocio.dto';
 import { SolicitarSubidaLogoDto } from '../dtos/solicitar-subida-logo.dto';
 import { Negocio } from '../modelo/negocio.entity';
@@ -23,6 +30,7 @@ export class NegociosService {
     @InjectRepository(Negocio)
     private readonly repo: Repository<Negocio>,
     private readonly archivosService: ArchivosService,
+    private readonly usuarioService: UsuarioService,
     private readonly config: ConfigService,
   ) {}
 
@@ -34,6 +42,33 @@ export class NegociosService {
       fechaAlta: new Date(),
     });
     return this.repo.save(negocio);
+  }
+
+  async crearAdmin(
+    negocioId: number,
+    dto: CrearAdminDto,
+  ): Promise<Omit<Usuario, 'password'>> {
+    await this.obtenerActual(negocioId);
+
+    const rolAdmin = await this.usuarioService.findByName('ADMIN');
+    if (!rolAdmin) {
+      throw new BadRequestException(
+        `El rol 'ADMIN' no existe — corré antes "npm run seed:roles".`,
+      );
+    }
+
+    const usuario = await this.usuarioService.create(
+      dto.email,
+      dto.password,
+      negocioId,
+      dto.nombre,
+      dto.apellido,
+    );
+    usuario.roles = [rolAdmin];
+    const guardado = await this.usuarioService.save(usuario);
+
+    const { password, ...resto } = guardado;
+    return resto;
   }
 
   async obtenerActual(negocioId: number): Promise<Negocio> {

@@ -24,6 +24,12 @@ export class Usuario {
   @Column()
   password: string;
 
+  @Column({ nullable: true })
+  nombre?: string;
+
+  @Column({ nullable: true })
+  apellido?: string;
+
   @Column()
   fechaAlta: Date;
 

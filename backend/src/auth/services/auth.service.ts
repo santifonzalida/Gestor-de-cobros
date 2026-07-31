@@ -43,6 +43,8 @@ export class AuthService {
       dto.email,
       dto.password,
       negocioId,
+      dto.nombre,
+      dto.apellido,
     );
     user.roles = [role];
     await this.usersService.save(user);

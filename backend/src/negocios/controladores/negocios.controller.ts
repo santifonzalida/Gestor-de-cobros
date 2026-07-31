@@ -23,6 +23,7 @@ import { Roles } from '../../auth/decorators/roles.decorator';
 import { ApiKeyGuard } from '../../auth/guards/api-key.guard';
 import { RolesGuard } from '../../auth/guards/roles.guard';
 import { ConfirmarLogoDto } from '../dtos/confirmar-logo.dto';
+import { CrearAdminDto } from '../dtos/crear-admin.dto';
 import { CrearNegocioDto } from '../dtos/crear-negocio.dto';
 import { SolicitarSubidaLogoDto } from '../dtos/solicitar-subida-logo.dto';
 import { NegociosService } from '../servicios/negocios.service';
@@ -44,6 +45,23 @@ export class NegociosController {
   })
   crear(@Body() dto: CrearNegocioDto) {
     return this.negociosService.crear(dto);
+  }
+
+  @Post(':id/admin')
+  @UseGuards(ApiKeyGuard)
+  @ApiHeader({
+    name: 'x-api-key',
+    description: 'ADMIN_SETUP_KEY — sin esto, 401',
+  })
+  @ApiOperation({
+    summary:
+      'Crear el usuario ADMIN de un negocio (uso operativo manual, no expuesto en la app)',
+  })
+  crearAdmin(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: CrearAdminDto,
+  ) {
+    return this.negociosService.crearAdmin(id, dto);
   }
 
   @Get('actual')

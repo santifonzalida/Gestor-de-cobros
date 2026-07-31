@@ -25,7 +25,13 @@ export class UsuarioService {
     return users.map(({ password, ...rest }) => rest);
   }
 
-  async create(email: string, password: string, negocioId: number) {
+  async create(
+    email: string,
+    password: string,
+    negocioId: number,
+    nombre?: string,
+    apellido?: string,
+  ) {
     const existingUser = await this.repoUsuarios.findOne({ where: { email } });
     if (existingUser) {
       throw new BadRequestException('El correo electrónico ya está en uso.');
@@ -38,6 +44,8 @@ export class UsuarioService {
       email,
       password: hash,
       negocio: { id: negocioId },
+      nombre,
+      apellido,
       fechaAlta: ahora,
       fechaModificacion: ahora,
       ultimoAcceso: ahora,
