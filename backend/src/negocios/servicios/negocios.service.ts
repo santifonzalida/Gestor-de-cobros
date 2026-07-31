@@ -7,6 +7,7 @@ import {
   ObjetoDescargado,
 } from '../../archivos/servicios/archivos.service';
 import { ConfirmarLogoDto } from '../dtos/confirmar-logo.dto';
+import { CrearNegocioDto } from '../dtos/crear-negocio.dto';
 import { SolicitarSubidaLogoDto } from '../dtos/solicitar-subida-logo.dto';
 import { Negocio } from '../modelo/negocio.entity';
 
@@ -24,6 +25,16 @@ export class NegociosService {
     private readonly archivosService: ArchivosService,
     private readonly config: ConfigService,
   ) {}
+
+  async crear(dto: CrearNegocioDto): Promise<Negocio> {
+    const negocio = this.repo.create({
+      nombre: dto.nombre,
+      descripcion: dto.descripcion,
+      activo: true,
+      fechaAlta: new Date(),
+    });
+    return this.repo.save(negocio);
+  }
 
   async obtenerActual(negocioId: number): Promise<Negocio> {
     const negocio = await this.repo.findOne({ where: { id: negocioId } });

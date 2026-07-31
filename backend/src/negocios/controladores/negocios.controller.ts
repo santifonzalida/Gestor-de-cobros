@@ -12,6 +12,7 @@ import {
 import { AuthGuard } from '@nestjs/passport';
 import {
   ApiBearerAuth,
+  ApiHeader,
   ApiOperation,
   ApiResponse,
   ApiTags,
@@ -19,8 +20,10 @@ import {
 import { Response } from 'express';
 import { NegocioId } from '../../auth/decorators/negocio-id.decorator';
 import { Roles } from '../../auth/decorators/roles.decorator';
+import { ApiKeyGuard } from '../../auth/guards/api-key.guard';
 import { RolesGuard } from '../../auth/guards/roles.guard';
 import { ConfirmarLogoDto } from '../dtos/confirmar-logo.dto';
+import { CrearNegocioDto } from '../dtos/crear-negocio.dto';
 import { SolicitarSubidaLogoDto } from '../dtos/solicitar-subida-logo.dto';
 import { NegociosService } from '../servicios/negocios.service';
 
@@ -28,6 +31,20 @@ import { NegociosService } from '../servicios/negocios.service';
 @Controller('negocios')
 export class NegociosController {
   constructor(private readonly negociosService: NegociosService) {}
+
+  @Post()
+  @UseGuards(ApiKeyGuard)
+  @ApiHeader({
+    name: 'x-api-key',
+    description: 'ADMIN_SETUP_KEY — sin esto, 401',
+  })
+  @ApiOperation({
+    summary:
+      'Crear un negocio nuevo (uso operativo manual, no expuesto en la app)',
+  })
+  crear(@Body() dto: CrearNegocioDto) {
+    return this.negociosService.crear(dto);
+  }
 
   @Get('actual')
   @ApiBearerAuth()
