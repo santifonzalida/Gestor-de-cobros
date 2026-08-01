@@ -20,6 +20,7 @@ interface PayloadInvitacionAlumno {
   tipo: 'invitacion_alumno';
   alumnoId: number;
   negocioId: number;
+  email: string;
 }
 
 @Injectable()
@@ -69,6 +70,7 @@ export class AuthService {
       tipo: 'invitacion_alumno',
       alumnoId,
       negocioId,
+      email: alumno.email,
     };
     const token = this.jwtService.sign(payload, { expiresIn: '48h' });
     const frontendUrl = this.config.get<string>('FRONTEND_URL');

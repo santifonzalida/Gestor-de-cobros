@@ -15,6 +15,7 @@ export class CompletarRegistro {
   protected readonly cargando = signal(false);
   protected readonly error = signal<string | null>(null);
   protected readonly completado = signal(false);
+  protected readonly email = signal<string | null>(null);
 
   private readonly token: string;
 
@@ -26,6 +27,18 @@ export class CompletarRegistro {
     this.token = this.route.snapshot.queryParamMap.get('token') ?? '';
     if (!this.token) {
       this.error.set('Este link de invitación no es válido.');
+    } else {
+      this.email.set(this.extraerEmail(this.token));
+    }
+  }
+
+  private extraerEmail(token: string): string | null {
+    try {
+      const [, payload] = token.split('.');
+      const datos = JSON.parse(atob(payload)) as { email?: string };
+      return datos.email ?? null;
+    } catch {
+      return null;
     }
   }
 
