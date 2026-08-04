@@ -11,4 +11,8 @@ export class Manual {
     event.preventDefault();
     document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
+
+  protected volverArriba(): void {
+    document.getElementById('tope')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
 }
