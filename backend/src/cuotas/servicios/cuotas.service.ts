@@ -6,6 +6,8 @@ import { ClasesService } from '../../clases/servicios/clases.service';
 import { ArchivosService } from '../../archivos/servicios/archivos.service';
 import { PagosService } from '../../pagos/servicios/pagos.service';
 import { Pago } from '../../pagos/modelo/pago.entity';
+import { ComprobantesService } from '../../comprobantes/servicios/comprobantes.service';
+import { EstadoComprobante } from '../../comprobantes/modelo/estado-comprobante.enum';
 import { ActualizarCuotaDto } from '../dtos/actualizar-cuota.dto';
 import { CrearCuotaDto } from '../dtos/crear-cuota.dto';
 import { CrearCuotaPorClaseDto } from '../dtos/crear-cuota-por-clase.dto';
@@ -32,6 +34,7 @@ export class CuotasService {
     @Inject(forwardRef(() => PagosService))
     private readonly pagosService: PagosService,
     private readonly archivosService: ArchivosService,
+    private readonly comprobantesService: ComprobantesService,
   ) {}
 
   private async existeDuplicado(
@@ -191,6 +194,9 @@ export class CuotasService {
 
   async eliminar(id: number, negocioId: number): Promise<{ message: string }> {
     await this.obtenerPorId(id, negocioId);
+    if (await this.comprobantesService.tieneHistorial(id, negocioId)) {
+      throw new BadRequestException('No se puede eliminar una cuota con comprobantes cargados.');
+    }
     await this.repo.delete(id);
     return { message: 'Cuota eliminada exitosamente.' };
   }
@@ -220,7 +226,9 @@ export class CuotasService {
     }
     cuota.comprobanteUrl = dto.key;
     cuota.estado = EstadoCuota.EN_REVISION;
-    return this.repo.save(cuota);
+    const guardada = await this.repo.save(cuota);
+    await this.comprobantesService.registrarCarga(id, negocioId, dto.key);
+    return guardada;
   }
 
   async obtenerUrlComprobante(
@@ -246,6 +254,7 @@ export class CuotasService {
     if (cuota.estado !== EstadoCuota.EN_REVISION || !cuota.comprobanteUrl) {
       throw new BadRequestException('Esta cuota no tiene ningún comprobante en revisión.');
     }
+    await this.comprobantesService.marcarRevisado(id, negocioId, EstadoComprobante.APROBADO, adminId);
     return this.pagosService.crear(
       {
         cuotaId: id,
@@ -259,11 +268,12 @@ export class CuotasService {
     );
   }
 
-  async rechazarComprobante(id: number, negocioId: number): Promise<Cuota> {
+  async rechazarComprobante(id: number, negocioId: number, adminId?: number): Promise<Cuota> {
     const cuota = await this.obtenerPorId(id, negocioId);
     if (cuota.estado !== EstadoCuota.EN_REVISION) {
       throw new BadRequestException('Esta cuota no tiene ningún comprobante en revisión.');
     }
+    await this.comprobantesService.marcarRevisado(id, negocioId, EstadoComprobante.RECHAZADO, adminId);
     await this.repo
       .createQueryBuilder()
       .update(Cuota)

@@ -7,6 +7,7 @@ import { AlumnosList } from './features/alumnos/alumnos-list/alumnos-list';
 import { AlumnoDetalle } from './features/alumnos/alumno-detalle/alumno-detalle';
 import { ClasesList } from './features/clases/clases-list/clases-list';
 import { CuotasList } from './features/cuotas/cuotas-list/cuotas-list';
+import { ComprobantesList } from './features/comprobantes/comprobantes-list/comprobantes-list';
 import { Configuracion } from './features/configuracion/configuracion';
 import { Manual } from './features/manual/manual';
 import { PortalAlumno } from './features/portal/portal-alumno/portal-alumno';
@@ -55,6 +56,12 @@ export const routes: Routes = [
     component: AdminShell,
     canActivate: [adminGuard],
     children: [{ path: '', component: CuotasList }],
+  },
+  {
+    path: 'comprobantes',
+    component: AdminShell,
+    canActivate: [adminGuard],
+    children: [{ path: '', component: ComprobantesList }],
   },
   {
     path: 'configuracion',

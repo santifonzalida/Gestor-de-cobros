@@ -121,8 +121,12 @@ export class CuotasController {
   @UseGuards(RolesGuard)
   @Roles('ADMIN')
   @ApiOperation({ summary: 'Rechazar el comprobante en revisión (vuelve la cuota a PENDIENTE)' })
-  rechazarComprobante(@Param('id', ParseIntPipe) id: number, @NegocioId() negocioId: number) {
-    return this.cuotasService.rechazarComprobante(id, negocioId);
+  rechazarComprobante(
+    @Param('id', ParseIntPipe) id: number,
+    @NegocioId() negocioId: number,
+    @Req() request: { user: { sub: number } },
+  ) {
+    return this.cuotasService.rechazarComprobante(id, negocioId, request.user.sub);
   }
 
   @Patch(':id')

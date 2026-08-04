@@ -4,6 +4,7 @@ import { AlumnosModule } from '../alumnos/alumnos.module';
 import { ClasesModule } from '../clases/clases.module';
 import { PagosModule } from '../pagos/pagos.module';
 import { ArchivosModule } from '../archivos/archivos.module';
+import { ComprobantesModule } from '../comprobantes/comprobantes.module';
 import { Cuota } from './modelo/cuota.entity';
 import { CuotasService } from './servicios/cuotas.service';
 import { CuotasController } from './controladores/cuotas.controller';
@@ -15,6 +16,7 @@ import { CuotasController } from './controladores/cuotas.controller';
     ClasesModule,
     forwardRef(() => PagosModule),
     ArchivosModule,
+    ComprobantesModule,
   ],
   controllers: [CuotasController],
   providers: [CuotasService],

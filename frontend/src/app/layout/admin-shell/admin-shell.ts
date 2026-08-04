@@ -21,7 +21,7 @@ export class AdminShell {
     { label: 'Alumnos', icon: '🧑‍🎓', route: '/alumnos' },
     { label: 'Clases', icon: '🥋', route: '/clases' },
     { label: 'Cuotas', icon: '💳', route: '/cuotas' },
-    { label: 'Comprobantes', icon: '📎', route: null },
+    { label: 'Comprobantes', icon: '📎', route: '/comprobantes' },
     { label: 'Configuración', icon: '⚙️', route: '/configuracion' },
     { label: 'Manual', icon: '📘', route: '/manual' },
   ];
