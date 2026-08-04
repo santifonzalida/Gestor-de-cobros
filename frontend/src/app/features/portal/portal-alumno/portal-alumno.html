@@ -1,4 +1,9 @@
-<div class="mx-auto min-h-screen max-w-md bg-page sm:min-h-0 sm:py-8 lg:max-w-5xl">
+<div
+  class="mx-auto min-h-screen max-w-md bg-page sm:min-h-0 sm:py-8 lg:max-w-5xl"
+  [style.--color-accent]="colorAccento()"
+  [style.--color-accent-hover]="colorAccentoHover()"
+  [style.--color-accent-soft]="colorAccentoSoft()"
+>
   @if (sinAlumnoVinculado()) {
     <div class="p-6 text-center text-sm text-text-muted">
       <p>Tu cuenta no está vinculada a ningún alumno todavía.</p>
@@ -21,13 +26,35 @@
           <div class="font-display text-lg font-bold lg:text-2xl">{{ a.nombre }} {{ a.apellido }}</div>
           <div class="mt-0.5 text-xs opacity-85 lg:text-sm">{{ a.clase?.nombre ?? 'Sin clase' }}</div>
         </div>
-        <button
-          type="button"
-          (click)="salir()"
-          class="shrink-0 rounded-lg px-2 py-1 text-xs font-semibold text-white/85 transition-colors hover:bg-white/10 hover:text-white"
-        >
-          Cerrar sesión
-        </button>
+        <div class="flex shrink-0 items-center gap-1.5">
+          @if (colorAccento() !== colorDefault) {
+            <button
+              type="button"
+              (click)="restablecerColor()"
+              title="Volver al color por defecto"
+              aria-label="Volver al color por defecto"
+              class="rounded-lg px-1 py-1 text-sm text-white/70 transition-colors hover:text-white"
+            >
+              ↺
+            </button>
+          }
+          <label title="Elegir un color" class="cursor-pointer">
+            <input
+              type="color"
+              [value]="colorAccento()"
+              (change)="onColorSeleccionado($event)"
+              aria-label="Elegir el color de la app"
+              class="block h-7 w-7 cursor-pointer rounded-full border-2 border-white/50 bg-transparent"
+            />
+          </label>
+          <button
+            type="button"
+            (click)="salir()"
+            class="rounded-lg px-2 py-1 text-xs font-semibold text-white/85 transition-colors hover:bg-white/10 hover:text-white"
+          >
+            Cerrar sesión
+          </button>
+        </div>
       </div>
     </div>
 

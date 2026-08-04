@@ -30,6 +30,10 @@ export class Usuario {
   @Column({ nullable: true })
   apellido?: string;
 
+  /** Color de acento elegido por el usuario para personalizar el Portal (hex). Null = usar el default de la app. */
+  @Column({ nullable: true })
+  colorAccento?: string;
+
   @Column()
   fechaAlta: Date;
 

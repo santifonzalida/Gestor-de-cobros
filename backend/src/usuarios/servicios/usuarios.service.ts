@@ -149,4 +149,32 @@ export class UsuarioService {
   async findByName(nombre: string) {
     return this.repoRoles.findOne({ where: { nombre } });
   }
+
+  async obtenerColorAccento(usuarioId: number): Promise<{ colorAccento: string | null }> {
+    const usuario = await this.repoUsuarios.findOne({
+      where: { id: usuarioId },
+      select: { id: true, colorAccento: true },
+    });
+    return { colorAccento: usuario?.colorAccento ?? null };
+  }
+
+  async actualizarColorAccento(usuarioId: number, color: string): Promise<{ colorAccento: string }> {
+    await this.repoUsuarios
+      .createQueryBuilder()
+      .update(Usuario)
+      .set({ colorAccento: color })
+      .where('id = :id', { id: usuarioId })
+      .execute();
+    return { colorAccento: color };
+  }
+
+  async eliminarColorAccento(usuarioId: number): Promise<{ colorAccento: null }> {
+    await this.repoUsuarios
+      .createQueryBuilder()
+      .update(Usuario)
+      .set({ colorAccento: null })
+      .where('id = :id', { id: usuarioId })
+      .execute();
+    return { colorAccento: null };
+  }
 }

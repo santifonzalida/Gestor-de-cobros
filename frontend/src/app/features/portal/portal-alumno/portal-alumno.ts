@@ -10,6 +10,7 @@ import { AuthService } from '../../../core/services/auth.service';
 import { CuotasService } from '../../../core/services/cuotas.service';
 import { NegociosService } from '../../../core/services/negocios.service';
 import { PagosService } from '../../../core/services/pagos.service';
+import { COLOR_ACCENTO_DEFAULT, PreferenciasService } from '../../../core/services/preferencias.service';
 import { StatusBadge } from '../../../shared/ui/status-badge/status-badge';
 
 const ETIQUETAS_METODO: Record<MetodoPago, string> = {
@@ -26,12 +27,14 @@ const ETIQUETAS_METODO: Record<MetodoPago, string> = {
 })
 export class PortalAlumno {
   protected readonly EstadoCuota = EstadoCuota;
+  protected readonly colorDefault = COLOR_ACCENTO_DEFAULT;
 
   protected readonly alumno = signal<AlumnoConEstado | undefined>(undefined);
   protected readonly cuotas = signal<Cuota[]>([]);
   protected readonly pagos = signal<Pago[]>([]);
   protected readonly sinAlumnoVinculado = signal(false);
   protected readonly logoUrl = signal<string | null>(null);
+  protected readonly colorAccento = signal(COLOR_ACCENTO_DEFAULT);
 
   protected readonly subiendoComprobante = signal(false);
   protected readonly errorComprobante = signal<string | null>(null);
@@ -45,9 +48,13 @@ export class PortalAlumno {
     private cuotasService: CuotasService,
     private negociosService: NegociosService,
     private pagosService: PagosService,
+    private preferenciasService: PreferenciasService,
     private router: Router,
   ) {
     this.negociosService.obtenerActual().subscribe((negocio) => this.logoUrl.set(negocio.logoUrl));
+    this.preferenciasService
+      .obtenerColor()
+      .subscribe(({ colorAccento }) => this.colorAccento.set(colorAccento ?? COLOR_ACCENTO_DEFAULT));
 
     this.alumnoId = this.authService.usuario()?.alumnoId ?? null;
     if (this.alumnoId === null) {
@@ -81,6 +88,25 @@ export class PortalAlumno {
 
   protected etiquetaMetodo(metodo: MetodoPago): string {
     return ETIQUETAS_METODO[metodo];
+  }
+
+  protected colorAccentoHover(): string {
+    return `color-mix(in srgb, ${this.colorAccento()} 82%, black)`;
+  }
+
+  protected colorAccentoSoft(): string {
+    return `color-mix(in srgb, ${this.colorAccento()} 14%, white)`;
+  }
+
+  protected onColorSeleccionado(event: Event): void {
+    const color = (event.target as HTMLInputElement).value;
+    this.colorAccento.set(color);
+    this.preferenciasService.actualizarColor(color).subscribe({ error: () => {} });
+  }
+
+  protected restablecerColor(): void {
+    this.colorAccento.set(COLOR_ACCENTO_DEFAULT);
+    this.preferenciasService.restablecerColor().subscribe({ error: () => {} });
   }
 
   protected salir(): void {

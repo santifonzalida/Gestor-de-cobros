@@ -36,3 +36,23 @@ h4 {
   font-family: var(--font-display);
   margin: 0;
 }
+
+/* Normaliza el selector de color nativo (Portal del Alumno) para que se vea
+   como un círculo prolijo en todos los navegadores en vez del cuadrado con
+   relleno que traen por default. */
+input[type='color'] {
+  appearance: none;
+  border: none;
+  padding: 0;
+}
+input[type='color']::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+input[type='color']::-webkit-color-swatch {
+  border: none;
+  border-radius: 9999px;
+}
+input[type='color']::-moz-color-swatch {
+  border: none;
+  border-radius: 9999px;
+}

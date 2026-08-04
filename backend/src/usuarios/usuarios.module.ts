@@ -4,11 +4,13 @@ import { Rol } from './modelo/rol.entity';
 import { Usuario } from './modelo/usuario.entity';
 import { Permiso } from './modelo/permiso.entity';
 import { UsuarioService } from './servicios/usuarios.service';
+import { UsuariosController } from './controladores/usuarios.controller';
 
 const entidades = TypeOrmModule.forFeature([Usuario, Rol, Permiso]);
 
 @Module({
   imports: [entidades],
+  controllers: [UsuariosController],
   providers: [UsuarioService],
   exports: [UsuarioService, entidades],
 })
