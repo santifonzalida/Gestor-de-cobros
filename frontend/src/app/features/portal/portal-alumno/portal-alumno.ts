@@ -38,6 +38,8 @@ export class PortalAlumno {
 
   protected readonly subiendoComprobante = signal(false);
   protected readonly errorComprobante = signal<string | null>(null);
+  protected readonly archivoPendiente = signal<File | null>(null);
+  protected readonly previewUrl = signal<string | null>(null);
 
   private readonly inputArchivo = viewChild<ElementRef<HTMLInputElement>>('inputArchivo');
   private alumnoId: number | null;
@@ -125,6 +127,23 @@ export class PortalAlumno {
   protected onArchivoSeleccionado(event: Event): void {
     const input = event.target as HTMLInputElement;
     const archivo = input.files?.[0];
+    if (!archivo) return;
+
+    this.errorComprobante.set(null);
+    this.liberarPreview();
+    this.archivoPendiente.set(archivo);
+    this.previewUrl.set(archivo.type.startsWith('image/') ? URL.createObjectURL(archivo) : null);
+    input.value = '';
+  }
+
+  protected cancelarArchivo(): void {
+    this.liberarPreview();
+    this.archivoPendiente.set(null);
+    this.errorComprobante.set(null);
+  }
+
+  protected confirmarSubida(): void {
+    const archivo = this.archivoPendiente();
     const cuotaActual = this.alumno()?.cuotaActual;
     if (!archivo || !cuotaActual) return;
 
@@ -134,13 +153,18 @@ export class PortalAlumno {
     this.cuotasService.subirComprobante(cuotaActual.id, archivo).subscribe({
       next: () => {
         this.subiendoComprobante.set(false);
+        this.cancelarArchivo();
         this.cargarDatos();
       },
       error: (err: HttpErrorResponse) => {
         this.subiendoComprobante.set(false);
         this.errorComprobante.set(err.error?.message ?? 'No se pudo subir el comprobante. Probá de nuevo.');
-        input.value = '';
       },
     });
+  }
+
+  private liberarPreview(): void {
+    const url = this.previewUrl();
+    if (url) URL.revokeObjectURL(url);
   }
 }

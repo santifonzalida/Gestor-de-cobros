@@ -38,15 +38,25 @@
               ↺
             </button>
           }
-          <label title="Elegir un color" class="cursor-pointer">
+          <div
+            class="relative flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white/15 text-white transition-colors hover:bg-white/25"
+            title="Elegir un color"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="pointer-events-none size-4">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M9.53 16.122a3 3 0 0 0-5.78 1.128 2.25 2.25 0 0 1-2.4 2.245 4.5 4.5 0 0 0 8.4-2.245c0-.399-.078-.78-.22-1.128Zm0 0a15.998 15.998 0 0 0 3.388-1.62m-5.043-.025a15.994 15.994 0 0 1 1.622-3.395m3.42 3.42a15.995 15.995 0 0 0 4.764-4.648l3.876-5.814a1.151 1.151 0 0 0-1.597-1.597L14.146 6.32a15.996 15.996 0 0 0-4.649 4.763m3.42 3.42a6.776 6.776 0 0 0-3.42-3.42"
+              />
+            </svg>
             <input
               type="color"
               [value]="colorAccento()"
               (change)="onColorSeleccionado($event)"
               aria-label="Elegir el color de la app"
-              class="block h-7 w-7 cursor-pointer rounded-full border-2 border-white/50 bg-transparent"
+              class="absolute inset-0 h-full w-full cursor-pointer opacity-0"
             />
-          </label>
+          </div>
           <button
             type="button"
             (click)="salir()"
@@ -96,19 +106,52 @@
             </div>
           } @else if (cuota.estado !== EstadoCuota.PAGADA) {
             <div class="mb-3.5 rounded-2xl border border-dashed border-border bg-surface p-4.5 text-center">
-              <div class="mb-2.5 flex h-20 items-center justify-center rounded-lg border border-dashed border-border bg-page px-3 text-center text-[10.5px] text-text-muted">
-                arrastrá o subí una foto / PDF del comprobante
-              </div>
+              @if (archivoPendiente(); as archivo) {
+                <div class="mb-2.5 flex items-center gap-2.5 rounded-lg border border-border bg-page px-3 py-2 text-left">
+                  @if (previewUrl(); as preview) {
+                    <img [src]="preview" alt="" class="h-10 w-10 shrink-0 rounded-lg object-cover" />
+                  } @else {
+                    <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-dashed border-border bg-surface text-center font-mono text-[10px] text-text-muted">
+                      {{ archivo.name.split('.').pop() }}
+                    </div>
+                  }
+                  <span class="flex-1 truncate text-[12px] text-text">{{ archivo.name }}</span>
+                </div>
+              } @else {
+                <div class="mb-2.5 flex h-20 items-center justify-center rounded-lg border border-dashed border-border bg-page px-3 text-center text-[10.5px] text-text-muted">
+                  arrastrá o subí una foto / PDF del comprobante
+                </div>
+              }
+
               @if (errorComprobante(); as err) {
                 <p class="mb-2.5 text-[11px] font-medium text-debt-text">{{ err }}</p>
               }
-              <button
-                (click)="abrirSelectorArchivo()"
-                [disabled]="subiendoComprobante()"
-                class="w-full rounded-lg bg-accent py-2.5 text-sm font-semibold text-white transition-colors hover:bg-accent-hover disabled:opacity-60"
-              >
-                {{ subiendoComprobante() ? 'Subiendo…' : 'Subir comprobante' }}
-              </button>
+
+              @if (archivoPendiente()) {
+                <div class="flex gap-2">
+                  <button
+                    (click)="cancelarArchivo()"
+                    [disabled]="subiendoComprobante()"
+                    class="flex-1 rounded-lg border border-border py-2.5 text-sm font-semibold text-text-muted transition-colors hover:bg-page disabled:opacity-60"
+                  >
+                    Cambiar
+                  </button>
+                  <button
+                    (click)="confirmarSubida()"
+                    [disabled]="subiendoComprobante()"
+                    class="flex-1 rounded-lg bg-accent py-2.5 text-sm font-semibold text-white transition-colors hover:bg-accent-hover disabled:opacity-60"
+                  >
+                    {{ subiendoComprobante() ? 'Subiendo…' : 'Confirmar y subir' }}
+                  </button>
+                </div>
+              } @else {
+                <button
+                  (click)="abrirSelectorArchivo()"
+                  class="w-full rounded-lg bg-accent py-2.5 text-sm font-semibold text-white transition-colors hover:bg-accent-hover"
+                >
+                  Subir comprobante
+                </button>
+              }
               <input #inputArchivo type="file" accept="image/*,.pdf" class="hidden" (change)="onArchivoSeleccionado($event)" />
             </div>
           }
