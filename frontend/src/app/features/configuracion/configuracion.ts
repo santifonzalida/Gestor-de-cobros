@@ -1,10 +1,12 @@
 import { Component, ElementRef, signal, viewChild } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { NegocioActual, NegociosService } from '../../core/services/negocios.service';
+import { UsuariosService } from '../../core/services/usuarios.service';
 
 @Component({
   selector: 'app-configuracion',
-  imports: [],
+  imports: [FormsModule],
   templateUrl: './configuracion.html',
 })
 export class Configuracion {
@@ -17,16 +19,90 @@ export class Configuracion {
   protected readonly archivoPendiente = signal<File | null>(null);
   protected readonly previewUrl = signal<string | null>(null);
 
+  protected readonly nombreNegocio = signal('');
+  protected readonly guardandoNombre = signal(false);
+  protected readonly errorNombre = signal<string | null>(null);
+  protected readonly mensajeNombre = signal<string | null>(null);
+
+  protected readonly cargandoPerfil = signal(true);
+  protected readonly perfilNombre = signal('');
+  protected readonly perfilApellido = signal('');
+  protected readonly guardandoPerfil = signal(false);
+  protected readonly errorPerfil = signal<string | null>(null);
+  protected readonly mensajePerfil = signal<string | null>(null);
+
   private readonly inputArchivo = viewChild<ElementRef<HTMLInputElement>>('inputArchivo');
 
-  constructor(private negociosService: NegociosService) {
+  constructor(
+    private negociosService: NegociosService,
+    private usuariosService: UsuariosService,
+  ) {
     this.cargar();
+    this.cargarPerfil();
   }
 
   private cargar(): void {
     this.negociosService.obtenerActual().subscribe((negocio) => {
       this.negocio.set(negocio);
+      this.nombreNegocio.set(negocio.nombre);
       this.cargando.set(false);
+    });
+  }
+
+  private cargarPerfil(): void {
+    this.usuariosService.obtenerPerfil().subscribe((perfil) => {
+      this.perfilNombre.set(perfil.nombre ?? '');
+      this.perfilApellido.set(perfil.apellido ?? '');
+      this.cargandoPerfil.set(false);
+    });
+  }
+
+  protected guardarNombreNegocio(): void {
+    const nombre = this.nombreNegocio().trim();
+    if (!nombre) {
+      this.errorNombre.set('El nombre no puede estar vacío.');
+      return;
+    }
+
+    this.errorNombre.set(null);
+    this.mensajeNombre.set(null);
+    this.guardandoNombre.set(true);
+
+    this.negociosService.actualizarNombre(nombre).subscribe({
+      next: (negocio) => {
+        this.guardandoNombre.set(false);
+        this.negocio.set(negocio);
+        this.nombreNegocio.set(negocio.nombre);
+        this.mensajeNombre.set('Nombre actualizado.');
+      },
+      error: (err: HttpErrorResponse) => {
+        this.guardandoNombre.set(false);
+        this.errorNombre.set(err.error?.message ?? 'No se pudo guardar el nombre. Probá de nuevo.');
+      },
+    });
+  }
+
+  protected guardarPerfil(): void {
+    const nombre = this.perfilNombre().trim();
+    const apellido = this.perfilApellido().trim();
+    if (!nombre || !apellido) {
+      this.errorPerfil.set('Nombre y apellido son obligatorios.');
+      return;
+    }
+
+    this.errorPerfil.set(null);
+    this.mensajePerfil.set(null);
+    this.guardandoPerfil.set(true);
+
+    this.usuariosService.actualizarPerfil(nombre, apellido).subscribe({
+      next: () => {
+        this.guardandoPerfil.set(false);
+        this.mensajePerfil.set('Datos actualizados.');
+      },
+      error: (err: HttpErrorResponse) => {
+        this.guardandoPerfil.set(false);
+        this.errorPerfil.set(err.error?.message ?? 'No se pudo guardar el perfil. Probá de nuevo.');
+      },
     });
   }
 

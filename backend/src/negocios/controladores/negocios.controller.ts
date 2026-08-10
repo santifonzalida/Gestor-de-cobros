@@ -5,6 +5,7 @@ import {
   Get,
   Param,
   ParseIntPipe,
+  Patch,
   Post,
   Res,
   UseGuards,
@@ -22,6 +23,7 @@ import { NegocioId } from '../../auth/decorators/negocio-id.decorator';
 import { Roles } from '../../auth/decorators/roles.decorator';
 import { ApiKeyGuard } from '../../auth/guards/api-key.guard';
 import { RolesGuard } from '../../auth/guards/roles.guard';
+import { ActualizarNegocioDto } from '../dtos/actualizar-negocio.dto';
 import { ConfirmarLogoDto } from '../dtos/confirmar-logo.dto';
 import { CrearAdminDto } from '../dtos/crear-admin.dto';
 import { CrearNegocioDto } from '../dtos/crear-negocio.dto';
@@ -72,6 +74,15 @@ export class NegociosController {
   })
   obtenerActual(@NegocioId() negocioId: number) {
     return this.negociosService.obtenerActualConLogo(negocioId);
+  }
+
+  @Patch('actual')
+  @ApiBearerAuth()
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles('ADMIN')
+  @ApiOperation({ summary: 'Editar el nombre del negocio' })
+  actualizar(@Body() dto: ActualizarNegocioDto, @NegocioId() negocioId: number) {
+    return this.negociosService.actualizar(negocioId, dto);
   }
 
   @Post('actual/logo/solicitar-subida')

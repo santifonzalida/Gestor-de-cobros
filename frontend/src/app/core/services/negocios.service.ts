@@ -20,6 +20,10 @@ export class NegociosService {
     return this.http.get<NegocioActual>(`${this.baseUrl}/actual`);
   }
 
+  actualizarNombre(nombre: string): Observable<NegocioActual> {
+    return this.http.patch<NegocioActual>(`${this.baseUrl}/actual`, { nombre });
+  }
+
   /**
    * Mismo orquestador de 3 pasos que CuotasService.subirComprobante: comprime
    * la imagen en el navegador (a WebP, para no perder la transparencia; el

@@ -150,6 +150,37 @@ export class UsuarioService {
     return this.repoRoles.findOne({ where: { nombre } });
   }
 
+  async obtenerPerfil(
+    usuarioId: number,
+  ): Promise<{ nombre: string | null; apellido: string | null; email: string }> {
+    const usuario = await this.repoUsuarios.findOne({
+      where: { id: usuarioId },
+      select: { id: true, nombre: true, apellido: true, email: true },
+    });
+    if (!usuario) {
+      throw new NotFoundException('No se encontro el usuario.');
+    }
+    return {
+      nombre: usuario.nombre ?? null,
+      apellido: usuario.apellido ?? null,
+      email: usuario.email,
+    };
+  }
+
+  async actualizarPerfil(
+    usuarioId: number,
+    nombre: string,
+    apellido: string,
+  ): Promise<{ nombre: string; apellido: string }> {
+    await this.repoUsuarios
+      .createQueryBuilder()
+      .update(Usuario)
+      .set({ nombre, apellido, fechaModificacion: new Date() })
+      .where('id = :id', { id: usuarioId })
+      .execute();
+    return { nombre, apellido };
+  }
+
   async obtenerColorAccento(usuarioId: number): Promise<{ colorAccento: string | null }> {
     const usuario = await this.repoUsuarios.findOne({
       where: { id: usuarioId },

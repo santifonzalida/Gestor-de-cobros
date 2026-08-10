@@ -12,6 +12,7 @@ import {
 } from '../../archivos/servicios/archivos.service';
 import { UsuarioService } from '../../usuarios/servicios/usuarios.service';
 import { Usuario } from '../../usuarios/modelo/usuario.entity';
+import { ActualizarNegocioDto } from '../dtos/actualizar-negocio.dto';
 import { ConfirmarLogoDto } from '../dtos/confirmar-logo.dto';
 import { CrearAdminDto } from '../dtos/crear-admin.dto';
 import { CrearNegocioDto } from '../dtos/crear-negocio.dto';
@@ -77,6 +78,20 @@ export class NegociosService {
       throw new NotFoundException('No se encontró el negocio.');
     }
     return negocio;
+  }
+
+  async actualizar(
+    negocioId: number,
+    dto: ActualizarNegocioDto,
+  ): Promise<NegocioActual> {
+    await this.obtenerActual(negocioId);
+    await this.repo
+      .createQueryBuilder()
+      .update(Negocio)
+      .set({ nombre: dto.nombre })
+      .where('id = :id', { id: negocioId })
+      .execute();
+    return this.obtenerActualConLogo(negocioId);
   }
 
   construirUrlLogo(negocioId: number): string {
