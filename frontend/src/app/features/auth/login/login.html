@@ -14,15 +14,42 @@
     <p class="mb-6 text-center text-sm text-text-muted">Ingrese sus credenciales para continuar.</p>
 
     <label class="mb-1 block text-xs font-semibold text-text-muted">Email</label>
-    <input
-      type="email"
-      name="email"
-      autocomplete="username"
-      required
-      class="mb-4 w-full rounded-lg border border-border bg-page px-3 py-2 text-sm text-text outline-none focus:border-accent"
-      [ngModel]="email()"
-      (ngModelChange)="email.set($event)"
-    />
+    <div class="mb-4">
+      <div class="flex gap-2">
+        <input
+          type="text"
+          name="emailLocal"
+          autocomplete="username"
+          placeholder="usuario"
+          required
+          class="min-w-0 flex-1 rounded-lg border border-border bg-page px-3 py-2 text-sm text-text outline-none focus:border-accent"
+          [ngModel]="emailLocal()"
+          (ngModelChange)="emailLocal.set($event)"
+        />
+        <select
+          name="dominio"
+          class="rounded-lg border border-border bg-page px-2 py-2 text-sm text-text outline-none focus:border-accent"
+          [ngModel]="dominio()"
+          (ngModelChange)="dominio.set($event)"
+        >
+          @for (d of dominios; track d.value) {
+            <option [value]="d.value">{{ d.label }}</option>
+          }
+        </select>
+      </div>
+
+      @if (dominio() === 'otro') {
+        <input
+          type="text"
+          name="dominioPersonalizado"
+          placeholder="tudominio.com"
+          required
+          class="mt-2 w-full rounded-lg border border-border bg-page px-3 py-2 text-sm text-text outline-none focus:border-accent"
+          [ngModel]="dominioPersonalizado()"
+          (ngModelChange)="dominioPersonalizado.set($event)"
+        />
+      }
+    </div>
 
     <label class="mb-1 block text-xs font-semibold text-text-muted">Contraseña</label>
     <input

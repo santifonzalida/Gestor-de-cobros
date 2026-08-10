@@ -25,6 +25,7 @@ export class AlumnosService {
 
     const alumno = this.repo.create({
       ...resto,
+      email: resto.email?.toLowerCase(),
       negocio: { id: negocioId },
       clase: claseId ? { id: claseId } : undefined,
       fechaAlta: new Date(),
@@ -86,6 +87,9 @@ export class AlumnosService {
     if (claseId) {
       await this.clasesService.obtenerPorId(claseId, negocioId);
       alumno.clase = { id: claseId } as Alumno['clase'];
+    }
+    if (resto.email !== undefined) {
+      resto.email = resto.email?.toLowerCase();
     }
     Object.assign(alumno, resto);
     return this.repo.save(alumno);
