@@ -181,6 +181,33 @@ export class UsuarioService {
     return { nombre, apellido };
   }
 
+  async cambiarPassword(
+    usuarioId: number,
+    passwordActual: string,
+    passwordNueva: string,
+  ): Promise<{ message: string }> {
+    const usuario = await this.repoUsuarios.findOne({ where: { id: usuarioId } });
+    if (!usuario) {
+      throw new NotFoundException('No se encontro el usuario.');
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+    const coincide = await bcrypt.compare(passwordActual, usuario.password);
+    if (!coincide) {
+      throw new BadRequestException('La contraseña actual no es correcta.');
+    }
+
+    const hash = await bcrypt.hash(passwordNueva, 10);
+    await this.repoUsuarios
+      .createQueryBuilder()
+      .update(Usuario)
+      .set({ password: hash, fechaModificacion: new Date() })
+      .where('id = :id', { id: usuarioId })
+      .execute();
+
+    return { message: 'Contraseña actualizada.' };
+  }
+
   async obtenerColorAccento(usuarioId: number): Promise<{ colorAccento: string | null }> {
     const usuario = await this.repoUsuarios.findOne({
       where: { id: usuarioId },

@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, signal } from '@angular/core';
 import { Router, RouterOutlet } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
 import { NavItem } from '../../shared/ui/nav-item/nav-item';
@@ -27,6 +27,7 @@ export class AdminShell {
   ];
 
   protected readonly usuario;
+  protected readonly mostrarConfirmarSalir = signal(false);
 
   constructor(
     private authService: AuthService,
@@ -35,7 +36,20 @@ export class AdminShell {
     this.usuario = this.authService.usuario;
   }
 
-  protected salir(): void {
+  protected pedirConfirmarSalir(): void {
+    this.mostrarConfirmarSalir.set(true);
+  }
+
+  protected cancelarSalir(): void {
+    this.mostrarConfirmarSalir.set(false);
+  }
+
+  protected confirmarSalir(): void {
+    this.mostrarConfirmarSalir.set(false);
+    this.salir();
+  }
+
+  private salir(): void {
     this.authService.logout();
     this.router.navigate(['/login']);
   }

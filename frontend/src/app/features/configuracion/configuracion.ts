@@ -31,6 +31,13 @@ export class Configuracion {
   protected readonly errorPerfil = signal<string | null>(null);
   protected readonly mensajePerfil = signal<string | null>(null);
 
+  protected readonly passwordActual = signal('');
+  protected readonly passwordNueva = signal('');
+  protected readonly passwordConfirmar = signal('');
+  protected readonly guardandoPassword = signal(false);
+  protected readonly errorPassword = signal<string | null>(null);
+  protected readonly mensajePassword = signal<string | null>(null);
+
   private readonly inputArchivo = viewChild<ElementRef<HTMLInputElement>>('inputArchivo');
 
   constructor(
@@ -102,6 +109,35 @@ export class Configuracion {
       error: (err: HttpErrorResponse) => {
         this.guardandoPerfil.set(false);
         this.errorPerfil.set(err.error?.message ?? 'No se pudo guardar el perfil. Probá de nuevo.');
+      },
+    });
+  }
+
+  protected cambiarPassword(): void {
+    if (this.passwordNueva().length < 6) {
+      this.errorPassword.set('La contraseña nueva tiene que tener al menos 6 caracteres.');
+      return;
+    }
+    if (this.passwordNueva() !== this.passwordConfirmar()) {
+      this.errorPassword.set('Las contraseñas no coinciden.');
+      return;
+    }
+
+    this.errorPassword.set(null);
+    this.mensajePassword.set(null);
+    this.guardandoPassword.set(true);
+
+    this.usuariosService.cambiarPassword(this.passwordActual(), this.passwordNueva()).subscribe({
+      next: () => {
+        this.guardandoPassword.set(false);
+        this.mensajePassword.set('Contraseña actualizada.');
+        this.passwordActual.set('');
+        this.passwordNueva.set('');
+        this.passwordConfirmar.set('');
+      },
+      error: (err: HttpErrorResponse) => {
+        this.guardandoPassword.set(false);
+        this.errorPassword.set(err.error?.message ?? 'No se pudo cambiar la contraseña. Probá de nuevo.');
       },
     });
   }

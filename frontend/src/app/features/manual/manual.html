@@ -82,12 +82,12 @@
           <span class="ml-auto text-text-muted">qué se cobra, a quién y cuándo</span>
         </div>
         <div class="flex items-center gap-2.5 px-3.5 py-2.5 text-[12.5px]">
-          <span>📎</span><span class="font-semibold text-text-muted">Comprobantes</span>
-          <span class="ml-auto rounded-full bg-soon-bg px-2 py-0.5 text-[10.5px] font-semibold text-soon-text">Próximamente</span>
+          <span>📎</span><span class="font-semibold text-text">Comprobantes</span>
+          <span class="ml-auto text-text-muted">historial completo, con filtros</span>
         </div>
         <div class="flex items-center gap-2.5 px-3.5 py-2.5 text-[12.5px]">
           <span>⚙️</span><span class="font-semibold text-text">Configuración</span>
-          <span class="ml-auto text-text-muted">logo de tu institución</span>
+          <span class="ml-auto text-text-muted">institución, tu cuenta y contraseña</span>
         </div>
         <div class="flex items-center gap-2.5 px-3.5 py-2.5 text-[12.5px]">
           <span>📘</span><span class="font-semibold text-text">Manual</span>
@@ -95,10 +95,15 @@
         </div>
       </div>
 
-      <p class="text-[12.5px] text-text-muted">
+      <p class="mb-3 text-[12.5px] text-text-muted">
         El Dashboard tiene dos vistas: <span class="font-semibold text-text">Resumen</span> (cuánto se cobró, cuánto
         se adeuda) y <span class="font-semibold text-text">Operativo</span> (quién debe, comprobantes esperando
         revisión, alumnos por clase).
+      </p>
+      <p class="text-[12.5px] text-text-muted">
+        <span class="font-semibold text-text">Configuración</span> ya no es solo el logo: también dejás cargado el
+        nombre de tu institución, tu propio nombre y apellido, y podés cambiar tu contraseña (pidiendo la actual,
+        mínimo 6 caracteres la nueva) — todo desde ahí.
       </p>
     </section>
 
@@ -219,6 +224,7 @@
         <li><span class="font-semibold text-text">Dashboard → Operativo:</span> tu primera parada — quién debe, comprobantes esperando revisión y el estado por clase, en una sola pantalla.</li>
         <li><span class="font-semibold text-text">Alumnos:</span> pestañas Todos, Al día, Adeudan e Inactivos. Cuando un alumno deja la institución no hace falta borrarlo: "Dar de baja" lo manda a Inactivos sin perder su historial, y podés "Reactivar" en cualquier momento.</li>
         <li><span class="font-semibold text-text">Cuotas:</span> filtrá por alumno, clase, estado, mes o año para encontrar algo puntual.</li>
+        <li><span class="font-semibold text-text">Comprobantes:</span> el historial completo de todo lo que se cargó alguna vez — incluidos los rechazados, que antes no quedaban registrados en ningún lado. Filtrá por alumno, clase, estado o mes, y tocá "Ver" para abrir el archivo.</li>
       </ul>
     </section>
 
@@ -230,10 +236,14 @@
         <li>Un botón para subir el comprobante (foto o PDF) cuando la cuota está pendiente.</li>
         <li>Su historial de pagos anteriores.</li>
         <li>El logo de tu institución, si cargaste uno.</li>
+        <li>Un ícono de pincel en el encabezado para elegir el color de su propio Portal — es una preferencia personal de cada alumno, no afecta lo que ven los demás ni tu Dashboard.</li>
       </ul>
-      <p class="text-[12.5px] text-text-muted">
-        Al subir el comprobante, la cuota queda <app-status-badge tone="soon">En revisión</app-status-badge> y el
-        alumno ve un mensaje de espera — el siguiente paso es tuyo, desde el detalle del alumno.
+      <p class="mb-3 text-[12.5px] text-text-muted">
+        Al elegir el archivo, el alumno ve una vista previa antes de que se suba nada — recién se envía al tocar
+        "Confirmar y subir" (mismo criterio que el logo en Configuración, para evitar que un toque accidental mande
+        un archivo equivocado). Una vez confirmado, la cuota queda
+        <app-status-badge tone="soon">En revisión</app-status-badge> y el alumno ve un mensaje de espera — el
+        siguiente paso es tuyo, desde el detalle del alumno.
       </p>
     </section>
 
@@ -264,6 +274,14 @@
         <details class="rounded-lg border border-border">
           <summary class="cursor-pointer px-3.5 py-2.5 text-[12.5px] font-semibold text-text">¿Diferencia entre rechazar un comprobante y eliminar un pago?</summary>
           <p class="px-3.5 pb-3 text-[12.5px] text-text-muted">"Rechazar" es para un comprobante en revisión que no corresponde — la cuota vuelve a Pendiente para que lo suba de nuevo. "Eliminar" un pago ya aprobado corrige un error de carga, y también devuelve la cuota a Pendiente.</p>
+        </details>
+        <details class="rounded-lg border border-border">
+          <summary class="cursor-pointer px-3.5 py-2.5 text-[12.5px] font-semibold text-text">Si rechazo un comprobante, ¿queda algún registro?</summary>
+          <p class="px-3.5 pb-3 text-[12.5px] text-text-muted">Sí. Aparece en <span class="font-semibold text-text">Comprobantes</span> con estado "Rechazado", junto con quién lo revisó y cuándo — antes se perdía todo rastro al rechazarlo, ahora queda el historial completo.</p>
+        </details>
+        <details class="rounded-lg border border-border">
+          <summary class="cursor-pointer px-3.5 py-2.5 text-[12.5px] font-semibold text-text">¿Puedo cambiar mi propia contraseña?</summary>
+          <p class="px-3.5 pb-3 text-[12.5px] text-text-muted">Sí, desde Configuración → "Cambiar contraseña". Te pide la actual (para confirmar que sos vos) y la nueva tiene que tener al menos 6 caracteres.</p>
         </details>
       </div>
     </section>
@@ -311,9 +329,19 @@
               <td class="px-3.5 py-2.5 text-center text-text-muted">No</td>
             </tr>
             <tr class="border-t border-border">
-              <td class="px-3.5 py-2.5">Cambiar el logo de la institución</td>
+              <td class="px-3.5 py-2.5">Cambiar el logo o el nombre de la institución</td>
               <td class="px-3.5 py-2.5 text-center font-semibold text-ok-text">Sí</td>
               <td class="px-3.5 py-2.5 text-center text-text-muted">No</td>
+            </tr>
+            <tr class="border-t border-border">
+              <td class="px-3.5 py-2.5">Ver el historial completo de comprobantes (incluidos rechazados)</td>
+              <td class="px-3.5 py-2.5 text-center font-semibold text-ok-text">Sí</td>
+              <td class="px-3.5 py-2.5 text-center text-text-muted">No</td>
+            </tr>
+            <tr class="border-t border-border">
+              <td class="px-3.5 py-2.5">Elegir un color personalizado para su propia vista</td>
+              <td class="px-3.5 py-2.5 text-center text-text-muted">No</td>
+              <td class="px-3.5 py-2.5 text-center font-semibold text-ok-text">Sí</td>
             </tr>
           </tbody>
         </table>

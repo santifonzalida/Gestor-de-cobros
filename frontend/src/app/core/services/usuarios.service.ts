@@ -22,4 +22,8 @@ export class UsuariosService {
   actualizarPerfil(nombre: string, apellido: string): Observable<{ nombre: string; apellido: string }> {
     return this.http.patch<{ nombre: string; apellido: string }>(`${this.baseUrl}/mi-perfil`, { nombre, apellido });
   }
+
+  cambiarPassword(passwordActual: string, passwordNueva: string): Observable<{ message: string }> {
+    return this.http.patch<{ message: string }>(`${this.baseUrl}/mi-password`, { passwordActual, passwordNueva });
+  }
 }

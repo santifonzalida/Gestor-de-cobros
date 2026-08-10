@@ -3,6 +3,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { ActualizarColorDto } from '../dtos/actualizar-color.dto';
 import { ActualizarPerfilDto } from '../dtos/actualizar-perfil.dto';
+import { CambiarPasswordDto } from '../dtos/cambiar-password.dto';
 import { UsuarioService } from '../servicios/usuarios.service';
 
 @ApiTags('Usuarios')
@@ -22,6 +23,12 @@ export class UsuariosController {
   @ApiOperation({ summary: 'Editar el nombre y apellido de la sesión actual' })
   actualizarPerfil(@Body() dto: ActualizarPerfilDto, @Req() request: { user: { sub: number } }) {
     return this.usuarioService.actualizarPerfil(request.user.sub, dto.nombre, dto.apellido);
+  }
+
+  @Patch('mi-password')
+  @ApiOperation({ summary: 'Cambiar la contraseña de la sesión actual (pide la contraseña actual)' })
+  cambiarPassword(@Body() dto: CambiarPasswordDto, @Req() request: { user: { sub: number } }) {
+    return this.usuarioService.cambiarPassword(request.user.sub, dto.passwordActual, dto.passwordNueva);
   }
 
   @Get('mi-color')

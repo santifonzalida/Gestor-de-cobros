@@ -40,6 +40,7 @@ export class PortalAlumno {
   protected readonly errorComprobante = signal<string | null>(null);
   protected readonly archivoPendiente = signal<File | null>(null);
   protected readonly previewUrl = signal<string | null>(null);
+  protected readonly mostrarConfirmarSalir = signal(false);
 
   private readonly inputArchivo = viewChild<ElementRef<HTMLInputElement>>('inputArchivo');
   private alumnoId: number | null;
@@ -111,7 +112,20 @@ export class PortalAlumno {
     this.preferenciasService.restablecerColor().subscribe({ error: () => {} });
   }
 
-  protected salir(): void {
+  protected pedirConfirmarSalir(): void {
+    this.mostrarConfirmarSalir.set(true);
+  }
+
+  protected cancelarSalir(): void {
+    this.mostrarConfirmarSalir.set(false);
+  }
+
+  protected confirmarSalir(): void {
+    this.mostrarConfirmarSalir.set(false);
+    this.salir();
+  }
+
+  private salir(): void {
     this.authService.logout();
     this.router.navigate(['/login']);
   }

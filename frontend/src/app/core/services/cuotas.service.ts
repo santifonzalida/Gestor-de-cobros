@@ -183,6 +183,17 @@ export class CuotasService {
       .pipe(map((c) => this.mapear(c)));
   }
 
+  /**
+   * Carga manual del admin (ej. le llegó el comprobante por WhatsApp): sube
+   * el archivo y lo aprueba en el mismo paso, sin pasar por "En revisión" de
+   * cara al usuario — encadena `subirComprobante` + `aprobarComprobante`, los
+   * mismos dos endpoints que ya usan el alumno y el admin por separado, sin
+   * necesidad de nada nuevo en el backend.
+   */
+  cargarComprobanteManual(cuotaId: number, archivo: File, dto: AprobarComprobanteForm): Observable<void> {
+    return this.subirComprobante(cuotaId, archivo).pipe(switchMap(() => this.aprobarComprobante(cuotaId, dto)));
+  }
+
   private mapear(c: CuotaApi): Cuota {
     return {
       id: c.id,

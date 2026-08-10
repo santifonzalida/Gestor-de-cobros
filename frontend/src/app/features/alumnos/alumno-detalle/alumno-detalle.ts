@@ -1,5 +1,5 @@
 import { DatePipe, DecimalPipe } from '@angular/common';
-import { Component, signal } from '@angular/core';
+import { Component, ElementRef, signal, viewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -50,6 +50,15 @@ export class AlumnoDetalle {
   protected readonly errorRechazar = signal<string | null>(null);
 
   protected readonly errorVerComprobante = signal<string | null>(null);
+
+  protected readonly cuotaACargarComprobante = signal<Cuota | null>(null);
+  protected readonly formCargarComprobante = signal<FormAprobar>({ metodo: 'EFECTIVO', montoPagado: 0 });
+  protected readonly archivoComprobante = signal<File | null>(null);
+  protected readonly previewComprobante = signal<string | null>(null);
+  protected readonly cargandoComprobante = signal(false);
+  protected readonly errorCargarComprobante = signal<string | null>(null);
+
+  private readonly inputComprobante = viewChild<ElementRef<HTMLInputElement>>('inputComprobante');
 
   protected readonly metodosPago: MetodoPago[] = ['EFECTIVO', 'TRANSFERENCIA', 'TARJETA', 'MERCADOPAGO'];
 
@@ -225,5 +234,66 @@ export class AlumnoDetalle {
         this.errorRechazar.set(err.error?.message ?? 'No se pudo rechazar el comprobante.');
       },
     });
+  }
+
+  protected abrirCargarComprobante(cuota: Cuota): void {
+    this.cuotaACargarComprobante.set(cuota);
+    this.formCargarComprobante.set({ metodo: 'EFECTIVO', montoPagado: cuota.monto });
+    this.archivoComprobante.set(null);
+    this.previewComprobante.set(null);
+    this.errorCargarComprobante.set(null);
+  }
+
+  protected cancelarCargarComprobante(): void {
+    this.liberarPreviewComprobante();
+    this.cuotaACargarComprobante.set(null);
+    this.archivoComprobante.set(null);
+    this.previewComprobante.set(null);
+  }
+
+  protected abrirSelectorComprobante(): void {
+    this.inputComprobante()?.nativeElement.click();
+  }
+
+  protected onArchivoComprobanteSeleccionado(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const archivo = input.files?.[0];
+    if (!archivo) return;
+
+    this.errorCargarComprobante.set(null);
+    this.liberarPreviewComprobante();
+    this.archivoComprobante.set(archivo);
+    this.previewComprobante.set(archivo.type.startsWith('image/') ? URL.createObjectURL(archivo) : null);
+    input.value = '';
+  }
+
+  protected actualizarFormCargarComprobante<K extends keyof FormAprobar>(campo: K, valor: FormAprobar[K]): void {
+    this.formCargarComprobante.update((actual) => ({ ...actual, [campo]: valor }));
+  }
+
+  protected confirmarCargarComprobante(): void {
+    const cuota = this.cuotaACargarComprobante();
+    const archivo = this.archivoComprobante();
+    if (!cuota || !archivo) return;
+
+    this.errorCargarComprobante.set(null);
+    this.cargandoComprobante.set(true);
+
+    this.cuotasService.cargarComprobanteManual(cuota.id, archivo, this.formCargarComprobante()).subscribe({
+      next: () => {
+        this.cargandoComprobante.set(false);
+        this.cancelarCargarComprobante();
+        this.cargarDatos();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.cargandoComprobante.set(false);
+        this.errorCargarComprobante.set(err.error?.message ?? 'No se pudo cargar el comprobante. Probá de nuevo.');
+      },
+    });
+  }
+
+  private liberarPreviewComprobante(): void {
+    const url = this.previewComprobante();
+    if (url) URL.revokeObjectURL(url);
   }
 }
