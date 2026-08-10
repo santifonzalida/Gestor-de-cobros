@@ -79,6 +79,23 @@ export class CuotasService {
     );
   }
 
+  /**
+   * De todas las cuotas de un alumno, cuál es "la actual": la más antigua
+   * todavía sin pagar (lo que realmente le corresponde resolver ahora), o si
+   * ya está al día con todas, la más reciente. Evita el bug de tomar
+   * directamente `cuotas[0]` de una lista ordenada de más nueva a más
+   * vieja — eso terminaba mostrando la cuota más lejana en el tiempo en vez
+   * de la más urgente cuando un alumno tenía más de una cargada a la vez.
+   */
+  seleccionarCuotaActual(cuotas: Cuota[]): Cuota | undefined {
+    const sinPagar = cuotas
+      .filter((c) => c.estado !== EstadoCuota.PAGADA)
+      .sort((a, b) => a.anio - b.anio || a.mes - b.mes);
+    if (sinPagar.length > 0) return sinPagar[0];
+
+    return [...cuotas].sort((a, b) => b.anio - a.anio || b.mes - a.mes)[0];
+  }
+
   listarTodos(filtros: FiltrosCuotas = {}): Observable<CuotaConAlumno[]> {
     const params: Record<string, string | number> = {};
     if (filtros.alumnoId) params['alumnoId'] = filtros.alumnoId;

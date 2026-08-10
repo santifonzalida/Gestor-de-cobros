@@ -7,7 +7,11 @@ import { AlumnosService } from './servicios/alumnos.service';
 import { AlumnosController } from './controladores/alumnos.controller';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Alumno]), ClasesModule, forwardRef(() => CuotasModule)],
+  imports: [
+    TypeOrmModule.forFeature([Alumno]),
+    ClasesModule,
+    forwardRef(() => CuotasModule),
+  ],
   controllers: [AlumnosController],
   providers: [AlumnosService],
   exports: [AlumnosService],

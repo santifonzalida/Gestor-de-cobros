@@ -69,7 +69,7 @@ export class AlumnosService {
       alumnos.map((alumno) =>
         this.cuotasService.listarPorAlumno(alumno.id).pipe(
           map((cuotas) => {
-            const cuotaActual = cuotas[0];
+            const cuotaActual = this.cuotasService.seleccionarCuotaActual(cuotas);
             return {
               ...alumno,
               fechaAlta: new Date(alumno.fechaAlta),
