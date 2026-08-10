@@ -45,9 +45,19 @@ export class ComprobantesService {
       .pipe(map((comprobantes) => comprobantes.map((c) => this.mapear(c))));
   }
 
+  /**
+   * `window.open` se llama ya mismo (mismo tick del click, antes del request)
+   * y recién se navega la pestaña cuando llega la URL — llamarlo adentro del
+   * `subscribe` pierde el "gesto de usuario" y los navegadores móviles lo
+   * bloquean como popup no solicitado.
+   */
   verComprobante(id: number): void {
-    this.http.get<{ url: string }>(`${this.baseUrl}/${id}/descargar`).subscribe(({ url }) => {
-      window.open(url, '_blank');
+    const ventana = window.open('', '_blank');
+    this.http.get<{ url: string }>(`${this.baseUrl}/${id}/descargar`).subscribe({
+      next: ({ url }) => {
+        if (ventana) ventana.location.href = url;
+      },
+      error: () => ventana?.close(),
     });
   }
 

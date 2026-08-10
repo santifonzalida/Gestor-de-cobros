@@ -2,6 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable, from, map, switchMap } from 'rxjs';
 import { environment } from '../../../environments/environment';
+import { comprimirImagen } from '../utils/comprimir-imagen';
 
 export interface NegocioActual {
   id: number;
@@ -20,30 +21,40 @@ export class NegociosService {
   }
 
   /**
-   * Mismo orquestador de 3 pasos que CuotasService.subirComprobante: pide una
-   * URL prefirmada, sube el archivo directo al bucket con fetch() nativo (no
-   * HttpClient, para que el interceptor de auth no le sume el Bearer de la
-   * app y rompa la firma de la URL) y confirma.
+   * Mismo orquestador de 3 pasos que CuotasService.subirComprobante: comprime
+   * la imagen en el navegador (a WebP, para no perder la transparencia; el
+   * SVG pasa sin tocar, ver `comprimirImagen`), pide una URL prefirmada, sube
+   * el archivo directo al bucket con fetch() nativo (no HttpClient, para que
+   * el interceptor de auth no le sume el Bearer de la app y rompa la firma de
+   * la URL) y confirma.
    */
   subirLogo(archivo: File): Observable<NegocioActual> {
-    return this.http
-      .post<{ url: string; key: string }>(`${this.baseUrl}/actual/logo/solicitar-subida`, {
-        nombreArchivo: archivo.name,
-        contentType: archivo.type,
-      })
-      .pipe(
-        switchMap(({ url, key }) =>
-          from(fetch(url, { method: 'PUT', headers: { 'Content-Type': archivo.type }, body: archivo })).pipe(
-            map((respuesta) => {
-              if (!respuesta.ok) throw new Error('No se pudo subir el archivo al almacenamiento.');
-              return key;
-            }),
+    return from(comprimirImagen(archivo, { tipoSalida: 'image/webp' })).pipe(
+      switchMap((archivoComprimido) =>
+        this.http
+          .post<{ url: string; key: string }>(`${this.baseUrl}/actual/logo/solicitar-subida`, {
+            nombreArchivo: archivoComprimido.name,
+            contentType: archivoComprimido.type,
+          })
+          .pipe(
+            switchMap(({ url, key }) =>
+              from(
+                fetch(url, {
+                  method: 'PUT',
+                  headers: { 'Content-Type': archivoComprimido.type },
+                  body: archivoComprimido,
+                }),
+              ).pipe(
+                map((respuesta) => {
+                  if (!respuesta.ok) throw new Error('No se pudo subir el archivo al almacenamiento.');
+                  return key;
+                }),
+              ),
+            ),
+            switchMap((key) => this.http.post<NegocioActual>(`${this.baseUrl}/actual/logo/confirmar`, { key })),
           ),
-        ),
-        switchMap((key) =>
-          this.http.post<NegocioActual>(`${this.baseUrl}/actual/logo/confirmar`, { key }),
-        ),
-      );
+      ),
+    );
   }
 
   eliminarLogo(): Observable<NegocioActual> {

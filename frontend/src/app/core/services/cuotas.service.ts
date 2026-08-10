@@ -5,6 +5,7 @@ import { environment } from '../../../environments/environment';
 import { EstadoPago } from '../models/alumno.model';
 import { Cuota, EstadoCuota } from '../models/cuota.model';
 import { MetodoPago } from '../models/pago.model';
+import { comprimirImagen } from '../utils/comprimir-imagen';
 
 const DIAS_PROXIMO_VENCIMIENTO = 7;
 
@@ -122,32 +123,44 @@ export class CuotasService {
   }
 
   /**
-   * Orquesta la subida real del comprobante: pide una URL prefirmada, sube el
-   * archivo directo al bucket y confirma. El PUT al bucket usa `fetch()` nativo
-   * en vez de `HttpClient` a propósito: el interceptor de auth le suma el Bearer
-   * de la app a cualquier request de HttpClient sin filtrar por URL, y eso
-   * rompería la firma de la URL prefirmada si viajara en ese PUT.
+   * Orquesta la subida real del comprobante: comprime la imagen en el
+   * navegador (los PDF pasan sin tocar, ver `comprimirImagen`), pide una URL
+   * prefirmada, sube el archivo directo al bucket y confirma. El PUT al bucket
+   * usa `fetch()` nativo en vez de `HttpClient` a propósito: el interceptor de
+   * auth le suma el Bearer de la app a cualquier request de HttpClient sin
+   * filtrar por URL, y eso rompería la firma de la URL prefirmada si viajara
+   * en ese PUT.
    */
   subirComprobante(cuotaId: number, archivo: File): Observable<Cuota> {
-    return this.http
-      .post<{ url: string; key: string }>(`${this.baseUrl}/${cuotaId}/comprobante/solicitar-subida`, {
-        nombreArchivo: archivo.name,
-        contentType: archivo.type,
-      })
-      .pipe(
-        switchMap(({ url, key }) =>
-          from(fetch(url, { method: 'PUT', headers: { 'Content-Type': archivo.type }, body: archivo })).pipe(
-            map((respuesta) => {
-              if (!respuesta.ok) throw new Error('No se pudo subir el archivo al almacenamiento.');
-              return key;
-            }),
+    return from(comprimirImagen(archivo, { tipoSalida: 'image/jpeg' })).pipe(
+      switchMap((archivoComprimido) =>
+        this.http
+          .post<{ url: string; key: string }>(`${this.baseUrl}/${cuotaId}/comprobante/solicitar-subida`, {
+            nombreArchivo: archivoComprimido.name,
+            contentType: archivoComprimido.type,
+          })
+          .pipe(
+            switchMap(({ url, key }) =>
+              from(
+                fetch(url, {
+                  method: 'PUT',
+                  headers: { 'Content-Type': archivoComprimido.type },
+                  body: archivoComprimido,
+                }),
+              ).pipe(
+                map((respuesta) => {
+                  if (!respuesta.ok) throw new Error('No se pudo subir el archivo al almacenamiento.');
+                  return key;
+                }),
+              ),
+            ),
+            switchMap((key) =>
+              this.http.post<CuotaApi>(`${this.baseUrl}/${cuotaId}/comprobante/confirmar`, { key }),
+            ),
+            map((c) => this.mapear(c)),
           ),
-        ),
-        switchMap((key) =>
-          this.http.post<CuotaApi>(`${this.baseUrl}/${cuotaId}/comprobante/confirmar`, { key }),
-        ),
-        map((c) => this.mapear(c)),
-      );
+      ),
+    );
   }
 
   verComprobante(cuotaId: number): Observable<{ url: string }> {

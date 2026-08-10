@@ -49,6 +49,8 @@ export class AlumnoDetalle {
   protected readonly rechazando = signal(false);
   protected readonly errorRechazar = signal<string | null>(null);
 
+  protected readonly errorVerComprobante = signal<string | null>(null);
+
   protected readonly metodosPago: MetodoPago[] = ['EFECTIVO', 'TRANSFERENCIA', 'TARJETA', 'MERCADOPAGO'];
 
   private alumnoId!: number;
@@ -132,9 +134,33 @@ export class AlumnoDetalle {
     });
   }
 
+  /**
+   * `window.open` tiene que llamarse en el mismo tick del click para que
+   * cuente como originado por el usuario — si se llama recién adentro del
+   * `subscribe` (después del round-trip HTTP para pedir la URL prefirmada),
+   * los navegadores móviles (Safari/Chrome en iOS y Android) lo tratan como
+   * un popup no solicitado y lo bloquean en silencio, aunque en desktop suele
+   * pasar igual. Por eso se abre la pestaña en blanco ya mismo, y recién se
+   * navega a la URL real cuando llega.
+   */
   protected verComprobante(cuota: Cuota): void {
-    this.cuotasService.verComprobante(cuota.id).subscribe((respuesta) => {
-      window.open(respuesta.url, '_blank');
+    this.errorVerComprobante.set(null);
+    const ventana = window.open('', '_blank');
+
+    this.cuotasService.verComprobante(cuota.id).subscribe({
+      next: (respuesta) => {
+        if (ventana) {
+          ventana.location.href = respuesta.url;
+        } else {
+          this.errorVerComprobante.set(
+            'El navegador bloqueó la ventana. Habilitá las ventanas emergentes para este sitio e intentá de nuevo.',
+          );
+        }
+      },
+      error: () => {
+        ventana?.close();
+        this.errorVerComprobante.set('No se pudo abrir el comprobante. Probá de nuevo.');
+      },
     });
   }
 

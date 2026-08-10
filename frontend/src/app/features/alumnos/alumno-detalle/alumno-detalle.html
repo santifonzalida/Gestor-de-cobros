@@ -58,6 +58,9 @@
                     Rechazar
                   </button>
                 </div>
+                @if (errorVerComprobante(); as err) {
+                  <p class="text-[11px] font-medium text-debt-text">{{ err }}</p>
+                }
               }
             </div>
           }
