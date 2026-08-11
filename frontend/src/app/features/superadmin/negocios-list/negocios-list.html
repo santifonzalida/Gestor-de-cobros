@@ -1,0 +1,110 @@
+<div class="min-h-screen bg-page">
+  <header class="flex items-center justify-between border-b border-border bg-surface px-5 py-3.5 md:px-7">
+    <div>
+      <div class="font-display text-base font-bold text-accent">Panel general</div>
+      <div class="text-[11.5px] text-text-muted">Actividad de todos los negocios de la plataforma</div>
+    </div>
+    <button
+      type="button"
+      (click)="pedirConfirmarSalir()"
+      class="rounded-lg border border-border px-3.5 py-2 text-xs font-semibold text-text-muted transition-colors hover:bg-page"
+    >
+      Cerrar sesión
+    </button>
+  </header>
+
+  <div class="p-5 md:p-7">
+    <div class="overflow-x-auto rounded-2xl border border-border bg-surface">
+      <table class="w-full border-collapse text-[12.5px]">
+        <thead>
+          <tr class="text-left text-text-muted">
+            <th class="px-3.5 py-2.5 font-medium">Negocio</th>
+            <th class="font-medium">Estado</th>
+            <th class="font-medium">Alumnos</th>
+            <th class="font-medium">Admins</th>
+            <th class="hidden font-medium sm:table-cell">Último acceso</th>
+            <th class="hidden font-medium sm:table-cell">Total cobrado</th>
+            <th class="px-3.5 py-2.5 text-right font-medium">Cuotas pendientes</th>
+          </tr>
+        </thead>
+        <tbody>
+          @if (cargando()) {
+            @for (_ of [1, 2, 3, 4]; track $index) {
+              <tr class="border-t border-border">
+                <td class="px-3.5 py-2.5"><div class="h-3 w-32 animate-pulse rounded bg-border"></div></td>
+                <td><div class="h-5 w-16 animate-pulse rounded-full bg-border"></div></td>
+                <td><div class="h-3 w-8 animate-pulse rounded bg-border"></div></td>
+                <td><div class="h-3 w-8 animate-pulse rounded bg-border"></div></td>
+                <td class="hidden sm:table-cell"><div class="h-3 w-20 animate-pulse rounded bg-border"></div></td>
+                <td class="hidden sm:table-cell"><div class="h-3 w-16 animate-pulse rounded bg-border"></div></td>
+                <td class="px-3.5 py-2.5 text-right"><div class="ml-auto h-3 w-8 animate-pulse rounded bg-border"></div></td>
+              </tr>
+            }
+          } @else {
+            @for (n of negocios(); track n.id) {
+              <tr class="border-t border-border">
+                <td class="px-3.5 py-2.5">
+                  <div class="font-semibold text-text">{{ n.nombre }}</div>
+                  @if (n.fechaAlta) {
+                    <div class="text-[11px] text-text-muted">alta {{ n.fechaAlta | date: 'MMMM yyyy' : 'UTC' }}</div>
+                  }
+                </td>
+                <td>
+                  @if (n.activo) {
+                    <app-status-badge tone="ok">Activo</app-status-badge>
+                  } @else {
+                    <app-status-badge tone="debt">Inactivo</app-status-badge>
+                  }
+                </td>
+                <td>{{ n.alumnos }}</td>
+                <td>{{ n.admins }}</td>
+                <td class="hidden sm:table-cell">
+                  {{ n.ultimoAcceso ? (n.ultimoAcceso | date: 'dd/MM/yyyy HH:mm') : 'sin accesos' }}
+                </td>
+                <td class="hidden sm:table-cell">${{ n.totalCobrado | number }}</td>
+                <td class="px-3.5 py-2.5 text-right">
+                  @if (n.cuotasPendientes > 0) {
+                    <app-status-badge tone="soon">{{ n.cuotasPendientes }}</app-status-badge>
+                  } @else {
+                    <span class="text-text-muted">0</span>
+                  }
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="7" class="px-3.5 py-6 text-center text-text-muted">Todavía no hay negocios cargados.</td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  @if (mostrarConfirmarSalir()) {
+    <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4" (click)="cancelarSalir()">
+      <div class="w-full max-w-sm rounded-xl border border-border bg-surface p-6 shadow-lg" (click)="$event.stopPropagation()">
+        <h3 class="mb-3 text-base font-bold">Cerrar sesión</h3>
+        <p class="mb-4 text-sm text-text-muted">
+          Vas a salir de tu cuenta. La próxima vez vas a tener que ingresar tu email y contraseña de nuevo.
+        </p>
+        <div class="flex justify-end gap-2">
+          <button
+            type="button"
+            (click)="cancelarSalir()"
+            class="rounded-lg border border-border px-3.5 py-2 text-xs font-semibold text-text-muted transition-colors hover:bg-page"
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            (click)="confirmarSalir()"
+            class="rounded-lg bg-accent px-3.5 py-2 text-xs font-semibold text-white transition-colors hover:bg-accent-hover"
+          >
+            Sí, cerrar sesión
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+</div>

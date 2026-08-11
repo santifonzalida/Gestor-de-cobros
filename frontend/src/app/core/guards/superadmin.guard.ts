@@ -2,7 +2,7 @@ import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
 import { AuthService } from '../services/auth.service';
 
-export const adminGuard: CanActivateFn = () => {
+export const superadminGuard: CanActivateFn = () => {
   const authService = inject(AuthService);
   const router = inject(Router);
 
@@ -11,13 +11,8 @@ export const adminGuard: CanActivateFn = () => {
     return false;
   }
 
-  if (authService.esAlumno()) {
-    router.navigate(['/portal']);
-    return false;
-  }
-
-  if (authService.esSuperadmin()) {
-    router.navigate(['/superadmin']);
+  if (!authService.esSuperadmin()) {
+    router.navigate(['/login']);
     return false;
   }
 

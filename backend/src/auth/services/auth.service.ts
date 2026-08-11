@@ -144,7 +144,15 @@ export class AuthService {
   }
 
   async login(user: Usuario) {
-    if (!user.negocio) {
+    const rolesSimplificados = user.roles.map((rol) => ({
+      id: rol.id,
+      name: rol.nombre,
+    }));
+    const esSuperadmin = rolesSimplificados.some(
+      (rol) => rol.name === 'SUPERADMIN',
+    );
+
+    if (!user.negocio && !esSuperadmin) {
       throw new UnauthorizedException(
         'El usuario no tiene un negocio asignado.',
       );
@@ -158,25 +166,21 @@ export class AuthService {
 
     const uniquePermissions = [...new Set(permissions)];
 
-    const rolesSimplificados = user.roles.map((rol) => ({
-      id: rol.id,
-      name: rol.nombre,
-    }));
-
     const payload = {
       sub: user.id,
       email: user.email,
-      negocioId: user.negocio.id,
+      negocioId: user.negocio?.id ?? null,
       alumnoId: user.alumno?.id ?? null,
       roles: rolesSimplificados,
       permissions: uniquePermissions,
     };
 
     const esAlumno = rolesSimplificados.some((rol) => rol.name === 'ALUMNO');
+    const ruta = esSuperadmin ? '/superadmin' : esAlumno ? '/portal' : '/dashboard';
 
     return {
       accessToken: this.jwtService.sign(payload),
-      ruta: esAlumno ? '/portal' : '/dashboard',
+      ruta,
     };
   }
 

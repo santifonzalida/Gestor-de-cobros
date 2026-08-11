@@ -8,6 +8,7 @@ import { PagosModule } from './pagos/pagos.module';
 import { UsuariosModule } from './usuarios/usuarios.module';
 import { NegociosModule } from './negocios/negocios.module';
 import { ClasesModule } from './clases/clases.module';
+import { SuperadminModule } from './superadmin/superadmin.module';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { ClasesModule } from './clases/clases.module';
     UsuariosModule,
     NegociosModule,
     ClasesModule,
+    SuperadminModule,
   ],
   controllers: [],
   providers: [],

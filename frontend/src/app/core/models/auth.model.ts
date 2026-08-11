@@ -6,7 +6,7 @@ export interface RolSesion {
 export interface UsuarioSesion {
   sub: number;
   email: string;
-  negocioId: number;
+  negocioId: number | null;
   alumnoId: number | null;
   roles: RolSesion[];
   permissions: string[];

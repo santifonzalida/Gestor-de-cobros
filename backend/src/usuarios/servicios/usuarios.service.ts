@@ -28,7 +28,7 @@ export class UsuarioService {
   async create(
     email: string,
     password: string,
-    negocioId: number,
+    negocioId?: number,
     nombre?: string,
     apellido?: string,
   ) {
@@ -44,7 +44,7 @@ export class UsuarioService {
     const user = this.repoUsuarios.create({
       email: emailNormalizado,
       password: hash,
-      negocio: { id: negocioId },
+      negocio: negocioId ? { id: negocioId } : undefined,
       nombre,
       apellido,
       fechaAlta: ahora,

@@ -11,10 +11,12 @@ import { ComprobantesList } from './features/comprobantes/comprobantes-list/comp
 import { Configuracion } from './features/configuracion/configuracion';
 import { Manual } from './features/manual/manual';
 import { PortalAlumno } from './features/portal/portal-alumno/portal-alumno';
+import { NegociosList } from './features/superadmin/negocios-list/negocios-list';
 import { Login } from './features/auth/login/login';
 import { CompletarRegistro } from './features/auth/completar-registro/completar-registro';
 import { authGuard } from './core/guards/auth.guard';
 import { adminGuard } from './core/guards/admin.guard';
+import { superadminGuard } from './core/guards/superadmin.guard';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
@@ -76,5 +78,6 @@ export const routes: Routes = [
     children: [{ path: '', component: Manual }],
   },
   { path: 'portal', component: PortalAlumno, canActivate: [authGuard] },
+  { path: 'superadmin', component: NegociosList, canActivate: [superadminGuard] },
   { path: '**', redirectTo: 'dashboard' },
 ];

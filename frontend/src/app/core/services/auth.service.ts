@@ -47,6 +47,10 @@ export class AuthService {
     return this.usuario()?.roles.some((rol) => rol.name === 'ALUMNO') ?? false;
   }
 
+  esSuperadmin(): boolean {
+    return this.usuario()?.roles.some((rol) => rol.name === 'SUPERADMIN') ?? false;
+  }
+
   private guardarToken(token: string): void {
     localStorage.setItem(TOKEN_KEY, token);
     this.token.set(token);
