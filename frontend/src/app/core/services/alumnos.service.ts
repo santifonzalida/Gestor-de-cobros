@@ -56,6 +56,12 @@ export class AlumnosService {
     return this.http.post<{ message: string }>(`${environment.apiUrl}/auth/invitar-alumno`, { alumnoId });
   }
 
+  actualizar(id: number, cambios: Partial<NuevoAlumno>): Observable<AlumnoConEstado> {
+    return this.http
+      .patch<AlumnoApi>(`${this.baseUrl}/${id}`, cambios)
+      .pipe(switchMap((alumno) => this.componerConEstado([alumno]).pipe(map((lista) => lista[0]))));
+  }
+
   cambiarEstado(id: number, activo: boolean): Observable<AlumnoConEstado> {
     return this.http
       .patch<AlumnoApi>(`${this.baseUrl}/${id}`, { activo })

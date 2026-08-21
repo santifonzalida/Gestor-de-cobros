@@ -35,6 +35,7 @@ export class AlumnosList {
 
   protected readonly clases = signal<Clase[]>([]);
   protected readonly mostrarModal = signal(false);
+  protected readonly editandoId = signal<number | null>(null);
   protected readonly guardando = signal(false);
   protected readonly error = signal<string | null>(null);
   protected readonly form = signal<NuevoAlumnoForm>({ ...FORM_VACIO });
@@ -86,7 +87,21 @@ export class AlumnosList {
   }
 
   protected abrirModal(): void {
+    this.editandoId.set(null);
     this.form.set({ ...FORM_VACIO });
+    this.error.set(null);
+    this.mostrarModal.set(true);
+  }
+
+  protected abrirEdicion(alumno: AlumnoConEstado): void {
+    this.editandoId.set(alumno.id);
+    this.form.set({
+      nombre: alumno.nombre,
+      apellido: alumno.apellido,
+      email: alumno.email ?? '',
+      telefono: alumno.telefono ?? '',
+      claseId: alumno.clase?.id ?? null,
+    });
     this.error.set(null);
     this.mostrarModal.set(true);
   }
@@ -109,25 +124,30 @@ export class AlumnosList {
     this.error.set(null);
     this.guardando.set(true);
 
-    this.alumnosService
-      .crear({
-        nombre: nombre.trim(),
-        apellido: apellido.trim(),
-        email: email.trim() || undefined,
-        telefono: telefono.trim() || undefined,
-        claseId: claseId ?? undefined,
-      })
-      .subscribe({
-        next: () => {
-          this.guardando.set(false);
-          this.mostrarModal.set(false);
-          this.cargarAlumnos();
-        },
-        error: () => {
-          this.guardando.set(false);
-          this.error.set('No se pudo crear el alumno. Intentá de nuevo.');
-        },
-      });
+    const datos = {
+      nombre: nombre.trim(),
+      apellido: apellido.trim(),
+      email: email.trim() || undefined,
+      telefono: telefono.trim() || undefined,
+      claseId: claseId ?? undefined,
+    };
+
+    const id = this.editandoId();
+    const operacion = id ? this.alumnosService.actualizar(id, datos) : this.alumnosService.crear(datos);
+
+    operacion.subscribe({
+      next: () => {
+        this.guardando.set(false);
+        this.mostrarModal.set(false);
+        this.cargarAlumnos();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.guardando.set(false);
+        this.error.set(
+          err.error?.message ?? (id ? 'No se pudo editar el alumno. Intentá de nuevo.' : 'No se pudo crear el alumno. Intentá de nuevo.'),
+        );
+      },
+    });
   }
 
   protected badgeTone(estado: EstadoPago): 'ok' | 'debt' | 'soon' {
