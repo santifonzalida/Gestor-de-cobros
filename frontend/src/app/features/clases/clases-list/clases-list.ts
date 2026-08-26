@@ -131,7 +131,7 @@ export class ClasesList {
 
   protected abrirEdicion(clase: Clase): void {
     this.editandoId.set(clase.id);
-    this.form.set({ nombre: clase.nombre, icono: clase.icono });
+    this.form.set({ nombre: clase.nombre, icono: clase.icono, descripcion: clase.descripcion ?? '' });
     this.error.set(null);
     this.mostrarModal.set(true);
   }

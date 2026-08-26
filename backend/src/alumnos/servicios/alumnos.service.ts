@@ -96,7 +96,17 @@ export class AlumnosService {
   }
 
   async eliminar(id: number, negocioId: number): Promise<{ message: string }> {
-    await this.obtenerPorId(id, negocioId);
+    const alumno = await this.obtenerPorId(id, negocioId);
+    if (alumno.activo) {
+      throw new BadRequestException(
+        'Solo se puede eliminar definitivamente a un alumno que ya esté dado de baja.',
+      );
+    }
+    if (await this.cuotasService.tieneCuotasDeAlumno(id, negocioId)) {
+      throw new BadRequestException(
+        'No se puede eliminar un alumno con cuotas cargadas.',
+      );
+    }
     await this.repo.delete(id);
     return { message: 'Alumno eliminado exitosamente.' };
   }

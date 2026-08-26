@@ -66,6 +66,10 @@ export class AlumnosList {
   protected readonly errorBaja = signal<string | null>(null);
   protected readonly reactivandoId = signal<number | null>(null);
 
+  protected readonly alumnoAEliminar = signal<AlumnoConEstado | null>(null);
+  protected readonly eliminando = signal(false);
+  protected readonly errorEliminar = signal<string | null>(null);
+
   constructor(
     private alumnosService: AlumnosService,
     private clasesService: ClasesService,
@@ -200,6 +204,35 @@ export class AlumnosList {
       },
       error: () => {
         this.reactivandoId.set(null);
+      },
+    });
+  }
+
+  protected pedirEliminar(alumno: AlumnoConEstado): void {
+    this.alumnoAEliminar.set(alumno);
+    this.errorEliminar.set(null);
+  }
+
+  protected cancelarEliminar(): void {
+    this.alumnoAEliminar.set(null);
+  }
+
+  protected confirmarEliminar(): void {
+    const alumno = this.alumnoAEliminar();
+    if (!alumno) return;
+
+    this.errorEliminar.set(null);
+    this.eliminando.set(true);
+
+    this.alumnosService.eliminar(alumno.id).subscribe({
+      next: () => {
+        this.eliminando.set(false);
+        this.alumnoAEliminar.set(null);
+        this.cargarAlumnos();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.eliminando.set(false);
+        this.errorEliminar.set(err.error?.message ?? 'No se pudo eliminar al alumno.');
       },
     });
   }

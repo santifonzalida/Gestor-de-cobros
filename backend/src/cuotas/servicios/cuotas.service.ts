@@ -201,6 +201,13 @@ export class CuotasService {
     return { message: 'Cuota eliminada exitosamente.' };
   }
 
+  async tieneCuotasDeAlumno(alumnoId: number, negocioId: number): Promise<boolean> {
+    const cantidad = await this.repo.count({
+      where: { alumno: { id: alumnoId }, negocio: { id: negocioId } },
+    });
+    return cantidad > 0;
+  }
+
   async solicitarSubidaComprobante(
     id: number,
     dto: SolicitarSubidaComprobanteDto,

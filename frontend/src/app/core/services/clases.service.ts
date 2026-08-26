@@ -7,6 +7,7 @@ import { Clase } from '../models/clase.model';
 export interface ClaseForm {
   nombre: string;
   icono: string;
+  descripcion?: string;
 }
 
 @Injectable({ providedIn: 'root' })

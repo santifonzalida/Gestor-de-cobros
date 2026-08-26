@@ -68,6 +68,10 @@ export class AlumnosService {
       .pipe(switchMap((alumno) => this.componerConEstado([alumno]).pipe(map((lista) => lista[0]))));
   }
 
+  eliminar(id: number): Observable<{ message: string }> {
+    return this.http.delete<{ message: string }>(`${this.baseUrl}/${id}`);
+  }
+
   private componerConEstado(alumnos: AlumnoApi[]): Observable<AlumnoConEstado[]> {
     if (alumnos.length === 0) return of([]);
 
