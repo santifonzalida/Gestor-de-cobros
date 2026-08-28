@@ -23,12 +23,12 @@ export const routes: Routes = [
   { path: 'login', component: Login },
   { path: 'completar-registro', component: CompletarRegistro },
   {
-    path: 'dashboard',
+    path: '',
     component: AdminShell,
     canActivate: [adminGuard],
     children: [
       {
-        path: '',
+        path: 'dashboard',
         component: DashboardShell,
         children: [
           { path: '', redirectTo: 'resumen', pathMatch: 'full' },
@@ -36,46 +36,19 @@ export const routes: Routes = [
           { path: 'operativo', component: DashboardOperativo },
         ],
       },
+      {
+        path: 'alumnos',
+        children: [
+          { path: '', component: AlumnosList },
+          { path: ':id', component: AlumnoDetalle },
+        ],
+      },
+      { path: 'clases', component: ClasesList },
+      { path: 'cuotas', component: CuotasList },
+      { path: 'comprobantes', component: ComprobantesList },
+      { path: 'configuracion', component: Configuracion },
+      { path: 'manual', component: Manual },
     ],
-  },
-  {
-    path: 'alumnos',
-    component: AdminShell,
-    canActivate: [adminGuard],
-    children: [
-      { path: '', component: AlumnosList },
-      { path: ':id', component: AlumnoDetalle },
-    ],
-  },
-  {
-    path: 'clases',
-    component: AdminShell,
-    canActivate: [adminGuard],
-    children: [{ path: '', component: ClasesList }],
-  },
-  {
-    path: 'cuotas',
-    component: AdminShell,
-    canActivate: [adminGuard],
-    children: [{ path: '', component: CuotasList }],
-  },
-  {
-    path: 'comprobantes',
-    component: AdminShell,
-    canActivate: [adminGuard],
-    children: [{ path: '', component: ComprobantesList }],
-  },
-  {
-    path: 'configuracion',
-    component: AdminShell,
-    canActivate: [adminGuard],
-    children: [{ path: '', component: Configuracion }],
-  },
-  {
-    path: 'manual',
-    component: AdminShell,
-    canActivate: [adminGuard],
-    children: [{ path: '', component: Manual }],
   },
   { path: 'portal', component: PortalAlumno, canActivate: [authGuard] },
   { path: 'superadmin', component: NegociosList, canActivate: [superadminGuard] },
