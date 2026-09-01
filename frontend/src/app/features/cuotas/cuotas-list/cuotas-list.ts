@@ -13,6 +13,7 @@ import { StatusBadge } from '../../../shared/ui/status-badge/status-badge';
 const ESTADOS_EDITABLES: EstadoCuota[] = [EstadoCuota.PENDIENTE, EstadoCuota.PAGADA, EstadoCuota.VENCIDA];
 
 type ModoAlta = 'alumno' | 'clase';
+type ModoFiltro = 'alumno' | 'clase';
 
 interface CuotaForm {
   alumnoId: number | null;
@@ -59,7 +60,9 @@ export class CuotasList {
   protected readonly modoAlta = signal<ModoAlta>('alumno');
   protected readonly mensajeLote = signal<string | null>(null);
 
+  protected readonly filtroModo = signal<ModoFiltro>('alumno');
   protected readonly filtroAlumnoId = signal<number | null>(null);
+  protected readonly filtroClaseId = signal<number | null>(null);
   protected readonly filtroEstado = signal<EstadoCuota | null>(null);
   protected readonly filtroMes = signal<number | null>(null);
   protected readonly filtroAnio = signal<number | null>(null);
@@ -86,7 +89,8 @@ export class CuotasList {
 
   private filtrosActuales(): FiltrosCuotas {
     return {
-      alumnoId: this.filtroAlumnoId() ?? undefined,
+      alumnoId: this.filtroModo() === 'alumno' ? this.filtroAlumnoId() ?? undefined : undefined,
+      claseId: this.filtroModo() === 'clase' ? this.filtroClaseId() ?? undefined : undefined,
       estado: this.filtroEstado() ?? undefined,
       mes: this.filtroMes() ?? undefined,
       anio: this.filtroAnio() ?? undefined,
@@ -105,8 +109,17 @@ export class CuotasList {
     this.cargar();
   }
 
-  protected limpiarFiltros(): void {
+  protected seleccionarModoFiltro(modo: ModoFiltro): void {
+    this.filtroModo.set(modo);
     this.filtroAlumnoId.set(null);
+    this.filtroClaseId.set(null);
+    this.cargar();
+  }
+
+  protected limpiarFiltros(): void {
+    this.filtroModo.set('alumno');
+    this.filtroAlumnoId.set(null);
+    this.filtroClaseId.set(null);
     this.filtroEstado.set(null);
     this.filtroMes.set(null);
     this.filtroAnio.set(null);

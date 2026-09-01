@@ -17,16 +17,48 @@
   }
 
   <div class="mb-3.5 flex flex-wrap gap-2">
-    <select
-      [ngModel]="filtroAlumnoId()"
-      (ngModelChange)="filtroAlumnoId.set($event); aplicarFiltros()"
-      class="rounded-lg border border-border px-3 py-1.5 text-xs"
-    >
-      <option [ngValue]="null">Todos los alumnos</option>
-      @for (a of alumnos(); track a.id) {
-        <option [ngValue]="a.id">{{ a.nombre }} {{ a.apellido }}</option>
-      }
-    </select>
+    <div class="flex overflow-hidden rounded-lg border border-border text-xs font-semibold">
+      <button
+        type="button"
+        (click)="seleccionarModoFiltro('alumno')"
+        class="px-3 py-1.5 transition-colors"
+        [class]="filtroModo() === 'alumno' ? 'bg-accent-soft text-accent' : 'text-text-muted hover:bg-page'"
+      >
+        Por alumno
+      </button>
+      <button
+        type="button"
+        (click)="seleccionarModoFiltro('clase')"
+        class="border-l border-border px-3 py-1.5 transition-colors"
+        [class]="filtroModo() === 'clase' ? 'bg-accent-soft text-accent' : 'text-text-muted hover:bg-page'"
+      >
+        Por clase
+      </button>
+    </div>
+
+    @if (filtroModo() === 'alumno') {
+      <select
+        [ngModel]="filtroAlumnoId()"
+        (ngModelChange)="filtroAlumnoId.set($event); aplicarFiltros()"
+        class="rounded-lg border border-border px-3 py-1.5 text-xs"
+      >
+        <option [ngValue]="null">Todos los alumnos</option>
+        @for (a of alumnos(); track a.id) {
+          <option [ngValue]="a.id">{{ a.nombre }} {{ a.apellido }}</option>
+        }
+      </select>
+    } @else {
+      <select
+        [ngModel]="filtroClaseId()"
+        (ngModelChange)="filtroClaseId.set($event); aplicarFiltros()"
+        class="rounded-lg border border-border px-3 py-1.5 text-xs"
+      >
+        <option [ngValue]="null">Todas las clases</option>
+        @for (c of clases(); track c.id) {
+          <option [ngValue]="c.id">{{ c.nombre }}</option>
+        }
+      </select>
+    }
 
     <select
       [ngModel]="filtroEstado()"
@@ -71,8 +103,8 @@
       <thead>
         <tr class="text-left text-text-muted">
           <th class="px-3.5 py-2.5 font-medium">Alumno</th>
-          <th class="font-medium">Mes</th>
-          <th class="font-medium">Monto</th>
+          <th class="hidden font-medium sm:table-cell">Mes</th>
+          <th class="hidden font-medium sm:table-cell">Monto</th>
           <th class="hidden font-medium sm:table-cell">Vencimiento</th>
           <th class="font-medium">Estado</th>
           <th class="px-3.5 py-2.5 text-right font-medium">Acciones</th>
@@ -83,8 +115,8 @@
           @for (_ of [1, 2, 3, 4, 5]; track $index) {
             <tr class="border-t border-border">
               <td class="px-3.5 py-2.5"><div class="h-3 w-32 animate-pulse rounded bg-border"></div></td>
-              <td><div class="h-3 w-20 animate-pulse rounded bg-border"></div></td>
-              <td><div class="h-3 w-14 animate-pulse rounded bg-border"></div></td>
+              <td class="hidden sm:table-cell"><div class="h-3 w-20 animate-pulse rounded bg-border"></div></td>
+              <td class="hidden sm:table-cell"><div class="h-3 w-14 animate-pulse rounded bg-border"></div></td>
               <td class="hidden sm:table-cell"><div class="h-3 w-14 animate-pulse rounded bg-border"></div></td>
               <td><div class="h-5 w-16 animate-pulse rounded-full bg-border"></div></td>
               <td class="px-3.5 py-2.5 text-right">
@@ -99,8 +131,8 @@
           @for (c of cuotas(); track c.id) {
             <tr class="border-t border-border">
               <td class="px-3.5 py-2.5">{{ c.alumno.nombre }} {{ c.alumno.apellido }}</td>
-              <td>{{ fechaMes(c) | date: 'MMMM yyyy' }}</td>
-              <td>${{ c.monto | number }}</td>
+              <td class="hidden sm:table-cell">{{ fechaMes(c) | date: 'MMMM yyyy' }}</td>
+              <td class="hidden sm:table-cell">${{ c.monto | number }}</td>
               <td class="hidden sm:table-cell">{{ c.fechaVencimiento | date: 'dd/MM/yyyy' : 'UTC' }}</td>
               <td>
                 <app-status-badge [tone]="badgeTone(c.estado)">{{ badgeLabel(c.estado) }}</app-status-badge>

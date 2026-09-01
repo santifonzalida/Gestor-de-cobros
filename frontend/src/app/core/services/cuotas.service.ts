@@ -2,12 +2,9 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable, from, map, switchMap } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { EstadoPago } from '../models/alumno.model';
 import { Cuota, EstadoCuota } from '../models/cuota.model';
 import { MetodoPago } from '../models/pago.model';
 import { comprimirImagen } from '../utils/comprimir-imagen';
-
-const DIAS_PROXIMO_VENCIMIENTO = 7;
 
 interface CuotaApi {
   id: number;
@@ -79,23 +76,6 @@ export class CuotasService {
     );
   }
 
-  /**
-   * De todas las cuotas de un alumno, cuál es "la actual": la más antigua
-   * todavía sin pagar (lo que realmente le corresponde resolver ahora), o si
-   * ya está al día con todas, la más reciente. Evita el bug de tomar
-   * directamente `cuotas[0]` de una lista ordenada de más nueva a más
-   * vieja — eso terminaba mostrando la cuota más lejana en el tiempo en vez
-   * de la más urgente cuando un alumno tenía más de una cargada a la vez.
-   */
-  seleccionarCuotaActual(cuotas: Cuota[]): Cuota | undefined {
-    const sinPagar = cuotas
-      .filter((c) => c.estado !== EstadoCuota.PAGADA)
-      .sort((a, b) => a.anio - b.anio || a.mes - b.mes);
-    if (sinPagar.length > 0) return sinPagar[0];
-
-    return [...cuotas].sort((a, b) => b.anio - a.anio || b.mes - a.mes)[0];
-  }
-
   listarTodos(filtros: FiltrosCuotas = {}): Observable<CuotaConAlumno[]> {
     const params: Record<string, string | number> = {};
     if (filtros.alumnoId) params['alumnoId'] = filtros.alumnoId;
@@ -123,16 +103,6 @@ export class CuotasService {
 
   eliminar(id: number): Observable<{ message: string }> {
     return this.http.delete<{ message: string }>(`${this.baseUrl}/${id}`);
-  }
-
-  calcularEstadoPago(cuota: Cuota | undefined): EstadoPago {
-    if (!cuota) return 'al_dia';
-    if (cuota.estado === EstadoCuota.VENCIDA) return 'adeuda';
-    if (cuota.estado === EstadoCuota.PAGADA || cuota.estado === EstadoCuota.EN_REVISION) {
-      return 'al_dia';
-    }
-    const dias = Math.ceil((cuota.fechaVencimiento.getTime() - Date.now()) / 86_400_000);
-    return dias <= DIAS_PROXIMO_VENCIMIENTO ? 'proximo' : 'al_dia';
   }
 
   listarEnRevision(): Observable<CuotaConAlumno[]> {

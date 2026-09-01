@@ -13,9 +13,9 @@ export interface Alumno {
 }
 
 /**
- * No existe como columna en el backend (`Alumno` no tiene este campo):
- * se deriva en el frontend a partir del estado/vencimiento de la cuota
- * más reciente del alumno.
+ * No existe como columna en ningún lado: el backend lo calcula en cada
+ * request a partir del estado/vencimiento de la cuota actual del alumno
+ * (ver `CuotasService.calcularEstadoPago`), pero no se persiste.
  */
 export type EstadoPago = 'al_dia' | 'proximo' | 'adeuda';
 

@@ -2,10 +2,16 @@ import { BadRequestException, forwardRef, Inject, Injectable, NotFoundException 
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ClasesService } from '../../clases/servicios/clases.service';
-import { CuotasService } from '../../cuotas/servicios/cuotas.service';
+import { CuotaResumen, CuotasService } from '../../cuotas/servicios/cuotas.service';
+import { EstadoPago } from '../../cuotas/modelo/estado-pago.type';
 import { Alumno } from '../modelo/alumno.entity';
 import { CrearAlumnoDto } from '../dtos/crear-alumno.dto';
 import { ActualizarAlumnoDto } from '../dtos/actualizar-alumno.dto';
+
+export interface AlumnoConEstado extends Alumno {
+  estadoPago: EstadoPago;
+  cuotaActual?: CuotaResumen;
+}
 
 @Injectable()
 export class AlumnosService {
@@ -37,11 +43,11 @@ export class AlumnosService {
       await this.cuotasService.crearParaNuevoAlumno(guardado.id, claseId, negocioId);
     }
 
-    return guardado;
+    return this.obtenerPorIdConEstado(guardado.id, negocioId);
   }
 
-  async listarTodos(negocioId: number, alumnoIdSesion?: number | null): Promise<Alumno[]> {
-    return this.repo.find({
+  async listarTodos(negocioId: number, alumnoIdSesion?: number | null): Promise<AlumnoConEstado[]> {
+    const alumnos = await this.repo.find({
       where: {
         negocio: { id: negocioId },
         ...(alumnoIdSesion != null ? { id: alumnoIdSesion } : {}),
@@ -50,6 +56,47 @@ export class AlumnosService {
       select: { usuario: { id: true } },
       order: { id: 'ASC' },
     });
+    return this.enriquecerConEstado(alumnos, negocioId);
+  }
+
+  /**
+   * Calcula `cuotaActual`/`estadoPago` de cada alumno en una sola consulta de
+   * cuotas (`CuotasService.listarPorAlumnos`), en vez del N+1 que antes hacía
+   * el frontend (un GET /cuotas por alumno). No se persiste nada — se
+   * recalcula en cada request, así que nunca puede quedar desactualizado.
+   */
+  private async enriquecerConEstado(alumnos: Alumno[], negocioId: number): Promise<AlumnoConEstado[]> {
+    if (alumnos.length === 0) return [];
+
+    const cuotas = await this.cuotasService.listarPorAlumnos(
+      alumnos.map((a) => a.id),
+      negocioId,
+    );
+    const cuotasPorAlumno = new Map<number, typeof cuotas>();
+    for (const cuota of cuotas) {
+      const lista = cuotasPorAlumno.get(cuota.alumno.id) ?? [];
+      lista.push(cuota);
+      cuotasPorAlumno.set(cuota.alumno.id, lista);
+    }
+
+    return alumnos.map((alumno) => {
+      const cuotasDelAlumno = cuotasPorAlumno.get(alumno.id) ?? [];
+      const cuotaActualCruda = this.cuotasService.seleccionarCuotaActual(cuotasDelAlumno);
+      return {
+        ...alumno,
+        cuotaActual: cuotaActualCruda ? this.cuotasService.resumir(cuotaActualCruda) : undefined,
+        estadoPago: this.cuotasService.calcularEstadoPago(cuotaActualCruda),
+      };
+    });
+  }
+
+  async obtenerPorIdConEstado(
+    id: number,
+    negocioId: number,
+    alumnoIdSesion?: number | null,
+  ): Promise<AlumnoConEstado> {
+    const alumno = await this.obtenerPorId(id, negocioId, alumnoIdSesion);
+    return (await this.enriquecerConEstado([alumno], negocioId))[0];
   }
 
   async listarPorClase(claseId: number, negocioId: number): Promise<Alumno[]> {
@@ -80,7 +127,7 @@ export class AlumnosService {
     await this.repo.save(alumno);
   }
 
-  async actualizar(id: number, dto: ActualizarAlumnoDto, negocioId: number): Promise<Alumno> {
+  async actualizar(id: number, dto: ActualizarAlumnoDto, negocioId: number): Promise<AlumnoConEstado> {
     const alumno = await this.obtenerPorId(id, negocioId);
     const { claseId, ...resto } = dto;
 
@@ -92,7 +139,8 @@ export class AlumnosService {
       resto.email = resto.email?.toLowerCase();
     }
     Object.assign(alumno, resto);
-    return this.repo.save(alumno);
+    await this.repo.save(alumno);
+    return this.obtenerPorIdConEstado(id, negocioId);
   }
 
   async eliminar(id: number, negocioId: number): Promise<{ message: string }> {

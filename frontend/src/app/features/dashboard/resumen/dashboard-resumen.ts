@@ -1,10 +1,11 @@
 import { DecimalPipe, DatePipe } from '@angular/common';
 import { Component, computed, signal } from '@angular/core';
-import { Router, RouterLink } from '@angular/router';
+import { Router } from '@angular/router';
 import { AlumnoConEstado } from '../../../core/models/alumno.model';
 import { EstadoCuota } from '../../../core/models/cuota.model';
 import { AlumnosService } from '../../../core/services/alumnos.service';
 import { CuotasService } from '../../../core/services/cuotas.service';
+import { UsuariosService } from '../../../core/services/usuarios.service';
 import { StatTile } from '../../../shared/ui/stat-tile/stat-tile';
 import { StatusBadge } from '../../../shared/ui/status-badge/status-badge';
 import { AvatarInitials } from '../../../shared/ui/avatar-initials/avatar-initials';
@@ -16,7 +17,7 @@ interface ComprobantePendiente {
 
 @Component({
   selector: 'app-dashboard-resumen',
-  imports: [StatTile, StatusBadge, AvatarInitials, RouterLink, DecimalPipe, DatePipe],
+  imports: [StatTile, StatusBadge, AvatarInitials, DecimalPipe, DatePipe],
   templateUrl: './dashboard-resumen.html',
 })
 export class DashboardResumen {
@@ -24,6 +25,7 @@ export class DashboardResumen {
   protected readonly comprobantesPendientes = signal<ComprobantePendiente[]>([]);
   protected readonly cargando = signal(true);
   protected readonly hoy = new Date();
+  protected readonly nombreUsuario = signal<string | null>(null);
 
   protected readonly recaudado = computed(() =>
     this.alumnos()
@@ -48,8 +50,13 @@ export class DashboardResumen {
   constructor(
     private alumnosService: AlumnosService,
     private cuotasService: CuotasService,
+    private usuariosService: UsuariosService,
     private router: Router,
   ) {
+    this.usuariosService.obtenerPerfil().subscribe((perfil) => {
+      this.nombreUsuario.set(perfil.nombre && perfil.apellido ? `${perfil.nombre} ${perfil.apellido}` : perfil.email);
+    });
+
     this.alumnosService.listar().subscribe((alumnos) => {
       this.alumnos.set(alumnos);
       this.cuotasService.listarEnRevision().subscribe((cuotas) => {

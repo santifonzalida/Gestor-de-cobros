@@ -54,7 +54,7 @@
       <thead>
         <tr class="text-left text-text-muted">
           <th class="px-3.5 py-2.5 font-medium">Alumno</th>
-          <th class="font-medium">Clase</th>
+          <th class="hidden font-medium sm:table-cell">Clase</th>
           <th class="hidden font-medium sm:table-cell">Última cuota</th>
           <th class="hidden font-medium sm:table-cell">Vencimiento</th>
           <th class="font-medium">Estado</th>
@@ -83,7 +83,7 @@
                 <app-avatar-initials [nombre]="a.nombre" [apellido]="a.apellido" [seed]="a.id" [size]="26" />
                 {{ a.nombre }} {{ a.apellido }}
               </td>
-              <td>{{ a.clase?.nombre ?? 'Sin clase' }}</td>
+              <td class="hidden sm:table-cell">{{ a.clase?.nombre ?? 'Sin clase' }}</td>
               <td class="hidden sm:table-cell">{{ a.cuotaActual ? (a.cuotaActual.fechaVencimiento | date: 'MMMM' : 'UTC') : '—' }}</td>
               <td class="hidden sm:table-cell">{{ a.cuotaActual ? (a.cuotaActual.fechaVencimiento | date: 'dd/MM' : 'UTC') : '—' }}</td>
               <td>

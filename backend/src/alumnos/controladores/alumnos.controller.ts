@@ -54,7 +54,7 @@ export class AlumnosController {
     @NegocioId() negocioId: number,
     @AlumnoIdSesion() alumnoIdSesion: number | null,
   ) {
-    return this.alumnosService.obtenerPorId(id, negocioId, alumnoIdSesion);
+    return this.alumnosService.obtenerPorIdConEstado(id, negocioId, alumnoIdSesion);
   }
 
   @Patch(':id')

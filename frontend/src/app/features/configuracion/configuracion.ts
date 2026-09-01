@@ -18,6 +18,7 @@ export class Configuracion {
 
   protected readonly archivoPendiente = signal<File | null>(null);
   protected readonly previewUrl = signal<string | null>(null);
+  protected readonly expandidoLogo = signal(false);
 
   protected readonly nombreNegocio = signal('');
   protected readonly guardandoNombre = signal(false);
@@ -30,6 +31,7 @@ export class Configuracion {
   protected readonly guardandoPerfil = signal(false);
   protected readonly errorPerfil = signal<string | null>(null);
   protected readonly mensajePerfil = signal<string | null>(null);
+  protected readonly expandidoPerfil = signal(false);
 
   protected readonly passwordActual = signal('');
   protected readonly passwordNueva = signal('');
@@ -37,6 +39,7 @@ export class Configuracion {
   protected readonly guardandoPassword = signal(false);
   protected readonly errorPassword = signal<string | null>(null);
   protected readonly mensajePassword = signal<string | null>(null);
+  protected readonly expandidoPassword = signal(false);
 
   private readonly inputArchivo = viewChild<ElementRef<HTMLInputElement>>('inputArchivo');
 

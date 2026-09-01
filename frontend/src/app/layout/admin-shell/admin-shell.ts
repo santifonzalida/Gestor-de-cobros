@@ -1,5 +1,5 @@
 import { Component, signal } from '@angular/core';
-import { Router, RouterOutlet } from '@angular/router';
+import { Router, RouterLink, RouterOutlet } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
 import { NavItem } from '../../shared/ui/nav-item/nav-item';
 
@@ -12,7 +12,7 @@ interface NavEntry {
 
 @Component({
   selector: 'app-admin-shell',
-  imports: [RouterOutlet, NavItem],
+  imports: [RouterOutlet, RouterLink, NavItem],
   templateUrl: './admin-shell.html',
 })
 export class AdminShell {

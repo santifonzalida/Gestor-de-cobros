@@ -1,6 +1,6 @@
 import { BadRequestException, forwardRef, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { FindOptionsWhere, Repository } from 'typeorm';
+import { FindOptionsWhere, In, Repository } from 'typeorm';
 import { AlumnosService } from '../../alumnos/servicios/alumnos.service';
 import { ClasesService } from '../../clases/servicios/clases.service';
 import { ArchivosService } from '../../archivos/servicios/archivos.service';
@@ -17,10 +17,23 @@ import { ConfirmarComprobanteDto } from '../dtos/confirmar-comprobante.dto';
 import { AprobarComprobanteDto } from '../dtos/aprobar-comprobante.dto';
 import { Cuota } from '../modelo/cuota.entity';
 import { EstadoCuota } from '../modelo/estado-cuota.enum';
+import { EstadoPago } from '../modelo/estado-pago.type';
 
 export interface ResultadoAltaPorClase {
   creadas: number;
   omitidas: number;
+}
+
+const DIAS_PROXIMO_VENCIMIENTO = 7;
+
+export interface CuotaResumen {
+  id: number;
+  mes: number;
+  anio: number;
+  monto: number;
+  estado: EstadoCuota;
+  fechaVencimiento: Date;
+  comprobanteUrl?: string;
 }
 
 @Injectable()
@@ -206,6 +219,64 @@ export class CuotasService {
       where: { alumno: { id: alumnoId }, negocio: { id: negocioId } },
     });
     return cantidad > 0;
+  }
+
+  /**
+   * Todas las cuotas de una lista de alumnos, en una sola consulta — el
+   * reemplazo del N+1 que antes hacía el frontend (un GET por alumno).
+   */
+  async listarPorAlumnos(alumnoIds: number[], negocioId: number): Promise<Cuota[]> {
+    if (alumnoIds.length === 0) return [];
+    return this.repo.find({
+      where: { negocio: { id: negocioId }, alumno: { id: In(alumnoIds) } },
+      relations: { alumno: true },
+    });
+  }
+
+  /**
+   * De todas las cuotas de un alumno, cuál es "la actual": la más antigua
+   * todavía sin pagar, o si ya está al día con todas, la más reciente.
+   */
+  seleccionarCuotaActual(cuotas: Cuota[]): Cuota | undefined {
+    const sinPagar = cuotas
+      .filter((c) => c.estado !== EstadoCuota.PAGADA)
+      .sort((a, b) => a.anio - b.anio || a.mes - b.mes);
+    if (sinPagar.length > 0) return sinPagar[0];
+
+    return [...cuotas].sort((a, b) => b.anio - a.anio || b.mes - a.mes)[0];
+  }
+
+  /**
+   * Nada en el backend transiciona una cuota de PENDIENTE a VENCIDA cuando
+   * pasa la fecha (no hay ningún cron) — así que acá se trata como "adeuda"
+   * tanto una cuota ya marcada VENCIDA a mano como una PENDIENTE cuya fecha
+   * de vencimiento ya pasó, no solo la primera.
+   */
+  calcularEstadoPago(cuota: Cuota | undefined): EstadoPago {
+    if (!cuota) return 'al_dia';
+
+    const yaVencio = cuota.fechaVencimiento.getTime() < Date.now();
+    if (cuota.estado === EstadoCuota.VENCIDA || (cuota.estado === EstadoCuota.PENDIENTE && yaVencio)) {
+      return 'adeuda';
+    }
+    if (cuota.estado === EstadoCuota.PAGADA || cuota.estado === EstadoCuota.EN_REVISION) {
+      return 'al_dia';
+    }
+
+    const dias = Math.ceil((cuota.fechaVencimiento.getTime() - Date.now()) / 86_400_000);
+    return dias <= DIAS_PROXIMO_VENCIMIENTO ? 'proximo' : 'al_dia';
+  }
+
+  resumir(cuota: Cuota): CuotaResumen {
+    return {
+      id: cuota.id,
+      mes: cuota.mes,
+      anio: cuota.anio,
+      monto: cuota.monto,
+      estado: cuota.estado,
+      fechaVencimiento: cuota.fechaVencimiento,
+      comprobanteUrl: cuota.comprobanteUrl,
+    };
   }
 
   async solicitarSubidaComprobante(
