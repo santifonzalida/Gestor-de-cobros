@@ -28,5 +28,6 @@ import { NegociosModule } from '../negocios/negocios.module';
   ],
   providers: [AuthService, EmailService, LocalStrategy, JwtStrategy],
   controllers: [AuthController],
+  exports: [AuthService],
 })
 export class AuthModule {}

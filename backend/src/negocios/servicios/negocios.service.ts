@@ -36,11 +36,13 @@ export class NegociosService {
   ) {}
 
   async crear(dto: CrearNegocioDto): Promise<Negocio> {
+    const ahora = new Date();
     const negocio = this.repo.create({
       nombre: dto.nombre,
       descripcion: dto.descripcion,
       activo: true,
-      fechaAlta: new Date(),
+      fechaAlta: ahora,
+      fechaModificacion: ahora,
     });
     return this.repo.save(negocio);
   }
@@ -88,7 +90,7 @@ export class NegociosService {
     await this.repo
       .createQueryBuilder()
       .update(Negocio)
-      .set({ nombre: dto.nombre })
+      .set({ nombre: dto.nombre, fechaModificacion: new Date() })
       .where('id = :id', { id: negocioId })
       .execute();
     return this.obtenerActualConLogo(negocioId);
@@ -134,6 +136,7 @@ export class NegociosService {
       );
     }
     negocio.logoUrl = dto.key;
+    negocio.fechaModificacion = new Date();
     await this.repo.save(negocio);
     return this.obtenerActualConLogo(negocioId);
   }
@@ -143,7 +146,7 @@ export class NegociosService {
     await this.repo
       .createQueryBuilder()
       .update(Negocio)
-      .set({ logoUrl: null })
+      .set({ logoUrl: null, fechaModificacion: new Date() })
       .where('id = :id', { id: negocioId })
       .execute();
     return this.obtenerActualConLogo(negocioId);

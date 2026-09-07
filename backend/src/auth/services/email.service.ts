@@ -32,22 +32,42 @@ export class EmailService {
     link: string,
     logoUrl?: string,
   ): Promise<void> {
-    const asunto = 'Te invitaron a acceder a tu portal de cuotas';
-    const logoHtml = logoUrl
-      ? `<img src="${logoUrl}" alt="" style="max-height:64px;margin-bottom:12px" />`
-      : '';
     const html = `
-      ${logoHtml}
+      ${this.logoHtml(logoUrl)}
       <p>Hola ${nombreAlumno},</p>
       <p>Te invitaron a crear tu acceso al portal de cuotas. Hacé click en el siguiente link para definir tu contraseña:</p>
       <p><a href="${link}">${link}</a></p>
       <p>Este link vence en 48 horas.</p>
     `;
+    await this.enviarCorreo(destinatario, 'Te invitaron a acceder a tu portal de cuotas', html);
+  }
 
+  async enviarInvitacionAdmin(
+    destinatario: string,
+    nombreNegocio: string,
+    link: string,
+    logoUrl?: string,
+  ): Promise<void> {
+    const html = `
+      ${this.logoHtml(logoUrl)}
+      <p>Hola,</p>
+      <p>Te invitaron a administrar <strong>${nombreNegocio}</strong> en Gestor de Cobros. Hacé click en el siguiente link para definir tu contraseña:</p>
+      <p><a href="${link}">${link}</a></p>
+      <p>Este link vence en 48 horas.</p>
+    `;
+    await this.enviarCorreo(destinatario, `Te invitaron a administrar ${nombreNegocio}`, html);
+  }
+
+  private logoHtml(logoUrl?: string): string {
+    return logoUrl ? `<img src="${logoUrl}" alt="" style="max-height:64px;margin-bottom:12px" />` : '';
+  }
+
+  private async enviarCorreo(destinatario: string, asunto: string, html: string): Promise<void> {
     if (!this.apiKey) {
       this.logger.warn(
-        `Brevo no configurado — mostrando la invitación por consola en vez de enviarla.\nDestinatario: ${destinatario}\nLink: ${link}`,
+        `Brevo no configurado — mostrando la invitación por consola en vez de enviarla.\nDestinatario: ${destinatario}\nAsunto: ${asunto}`,
       );
+      this.logger.warn(html);
       return;
     }
 

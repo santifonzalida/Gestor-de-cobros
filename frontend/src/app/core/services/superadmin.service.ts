@@ -9,11 +9,21 @@ interface NegocioResumenApi {
   nombre: string;
   activo: boolean;
   fechaAlta: string | null;
+  emailAdmin: string | null;
   alumnos: number;
   admins: number;
   ultimoAcceso: string | null;
-  totalCobrado: number;
-  cuotasPendientes: number;
+}
+
+export interface NuevoNegocioForm {
+  nombre: string;
+  emailAdmin: string;
+}
+
+export interface InvitarAdminForm {
+  email: string;
+  nombre?: string;
+  apellido?: string;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -24,13 +34,29 @@ export class SuperadminService {
 
   listarNegocios(): Observable<NegocioResumen[]> {
     return this.http.get<NegocioResumenApi[]>(`${this.baseUrl}/negocios`).pipe(
-      map((negocios) =>
-        negocios.map((n) => ({
-          ...n,
-          fechaAlta: n.fechaAlta ? new Date(n.fechaAlta) : null,
-          ultimoAcceso: n.ultimoAcceso ? new Date(n.ultimoAcceso) : null,
-        })),
-      ),
+      map((negocios) => negocios.map((n) => this.mapear(n))),
     );
+  }
+
+  crearNegocio(dto: NuevoNegocioForm): Observable<NegocioResumen> {
+    return this.http
+      .post<NegocioResumenApi>(`${this.baseUrl}/negocios`, dto)
+      .pipe(map((n) => this.mapear(n)));
+  }
+
+  invitarAdmin(id: number, dto: InvitarAdminForm): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(`${this.baseUrl}/negocios/${id}/invitar-admin`, dto);
+  }
+
+  cambiarEstado(id: number, activo: boolean): Observable<{ id: number; activo: boolean }> {
+    return this.http.patch<{ id: number; activo: boolean }>(`${this.baseUrl}/negocios/${id}/estado`, { activo });
+  }
+
+  private mapear(n: NegocioResumenApi): NegocioResumen {
+    return {
+      ...n,
+      fechaAlta: n.fechaAlta ? new Date(n.fechaAlta) : null,
+      ultimoAcceso: n.ultimoAcceso ? new Date(n.ultimoAcceso) : null,
+    };
   }
 }

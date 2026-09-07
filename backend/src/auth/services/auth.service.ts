@@ -23,6 +23,16 @@ interface PayloadInvitacionAlumno {
   email: string;
 }
 
+interface PayloadInvitacionAdmin {
+  tipo: 'invitacion_admin';
+  negocioId: number;
+  email: string;
+  nombre?: string;
+  apellido?: string;
+}
+
+type PayloadInvitacion = PayloadInvitacionAlumno | PayloadInvitacionAdmin;
+
 @Injectable()
 export class AuthService {
   constructor(
@@ -87,22 +97,73 @@ export class AuthService {
     return { message: 'Invitación enviada.' };
   }
 
+  /**
+   * Análogo a `generarInvitacion` (alumno), pero para el primer admin de un
+   * negocio nuevo — lo dispara el panel Superadmin, nunca el propio negocio.
+   * A diferencia del alumno, acá no hay ningún `Alumno` al que vincular: el
+   * `Usuario` que se crea al completar la invitación queda asociado
+   * directamente al `negocioId` del payload.
+   */
+  async generarInvitacionAdmin(
+    negocioId: number,
+    email: string,
+    nombre?: string,
+    apellido?: string,
+  ): Promise<{ message: string }> {
+    const emailNormalizado = email.toLowerCase();
+    const existente = await this.usersService.findByEmail(emailNormalizado);
+    if (existente) {
+      throw new BadRequestException('Ya existe una cuenta con ese email.');
+    }
+
+    const negocio = await this.negociosService.obtenerActualConLogo(negocioId);
+
+    const payload: PayloadInvitacionAdmin = {
+      tipo: 'invitacion_admin',
+      negocioId,
+      email: emailNormalizado,
+      nombre,
+      apellido,
+    };
+    const token = this.jwtService.sign(payload, { expiresIn: '48h' });
+    const frontendUrl = this.config.get<string>('FRONTEND_URL');
+    const link = `${frontendUrl}/completar-registro?token=${token}`;
+
+    await this.emailService.enviarInvitacionAdmin(
+      emailNormalizado,
+      negocio.nombre,
+      link,
+      negocio.logoUrl ?? undefined,
+    );
+    return { message: 'Invitación enviada.' };
+  }
+
   async completarInvitacion(
     token: string,
     password: string,
   ): Promise<{ message: string }> {
-    let payload: PayloadInvitacionAlumno;
+    let payload: PayloadInvitacion;
     try {
-      payload = this.jwtService.verify<PayloadInvitacionAlumno>(token);
+      payload = this.jwtService.verify<PayloadInvitacion>(token);
     } catch {
       throw new BadRequestException(
         'El link de invitación no es válido o venció.',
       );
     }
-    if (payload.tipo !== 'invitacion_alumno') {
-      throw new BadRequestException('El link de invitación no es válido.');
-    }
 
+    if (payload.tipo === 'invitacion_admin') {
+      return this.completarInvitacionAdmin(payload, password);
+    }
+    if (payload.tipo === 'invitacion_alumno') {
+      return this.completarInvitacionAlumno(payload, password);
+    }
+    throw new BadRequestException('El link de invitación no es válido.');
+  }
+
+  private async completarInvitacionAlumno(
+    payload: PayloadInvitacionAlumno,
+    password: string,
+  ): Promise<{ message: string }> {
     const alumno = await this.alumnosService.obtenerPorId(
       payload.alumnoId,
       payload.negocioId,
@@ -129,6 +190,26 @@ export class AuthService {
       user.id,
       payload.negocioId,
     );
+    return { message: 'Cuenta creada exitosamente.' };
+  }
+
+  private async completarInvitacionAdmin(
+    payload: PayloadInvitacionAdmin,
+    password: string,
+  ): Promise<{ message: string }> {
+    const role = await this.usersService.findByName('ADMIN');
+    if (!role) throw new BadRequestException(`El rol 'ADMIN' no existe.`);
+
+    const user = await this.usersService.create(
+      payload.email,
+      password,
+      payload.negocioId,
+      payload.nombre,
+      payload.apellido,
+    );
+    user.roles = [role];
+    await this.usersService.save(user);
+
     return { message: 'Cuenta creada exitosamente.' };
   }
 
